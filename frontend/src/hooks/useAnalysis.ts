@@ -5,7 +5,6 @@ import { AnalysisResult, AnalysisStatus, AnalysisTrace } from '../types';
 import { Language } from '../i18n';
 
 interface UseAnalysisReturn {
-  analysisId: string | null;
   result: AnalysisResult | null;
   status: AnalysisStatus | null;
   error: string | null;
@@ -21,7 +20,6 @@ const POLL_INTERVAL_MS = 2000; // 2 seconds
 const MAX_POLL_COUNT = 300;     // 10 minutes max
 
 export function useAnalysis(): UseAnalysisReturn {
-  const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [status, setStatus] = useState<AnalysisStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +35,14 @@ export function useAnalysis(): UseAnalysisReturn {
       pollingRef.current = null;
     }
     pollCountRef.current = 0;
+  }, []);
+
+  const resetAnalysisState = useCallback(() => {
+    setError(null);
+    setResult(null);
+    setTrace(null);
+    setIsLoading(true);
+    setCompletedAgents([]);
   }, []);
 
   const fetchTrace = useCallback(async (id: string) => {
@@ -123,16 +129,11 @@ export function useAnalysis(): UseAnalysisReturn {
 
   const startAnalysis = useCallback(async (symbol: string, language: Language = 'en') => {
     stopPolling();
-    setError(null);
-    setResult(null);
-    setTrace(null);
+    resetAnalysisState();
     setStatus('pending');
-    setIsLoading(true);
-    setCompletedAgents([]);
 
     try {
       const response = await api.startAnalysis(symbol, language);
-      setAnalysisId(response.analysis_id);
       setStatus(response.status as AnalysisStatus);
 
       // Start polling for results
@@ -141,7 +142,7 @@ export function useAnalysis(): UseAnalysisReturn {
       setIsLoading(false);
       setError(`Failed to start analysis: ${e.message}`);
     }
-  }, [pollAnalysis, stopPolling]);
+  }, [pollAnalysis, resetAnalysisState, stopPolling]);
 
   const retry = useCallback((symbol: string, language: Language = 'en') => {
     if (symbol) {
@@ -151,11 +152,7 @@ export function useAnalysis(): UseAnalysisReturn {
 
   const loadDemo = useCallback(async () => {
     stopPolling();
-    setError(null);
-    setResult(null);
-    setTrace(null);
-    setCompletedAgents([]);
-    setIsLoading(true);
+    resetAnalysisState();
     setStatus('running');
 
     try {
@@ -168,7 +165,7 @@ export function useAnalysis(): UseAnalysisReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [stopPolling]);
+  }, [resetAnalysisState, stopPolling]);
 
   useEffect(() => {
     return () => {
@@ -177,7 +174,6 @@ export function useAnalysis(): UseAnalysisReturn {
   }, [stopPolling]);
 
   return {
-    analysisId,
     result,
     status,
     error,

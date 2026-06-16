@@ -715,12 +715,6 @@ html:lang(th) .hero-action-badge {
   transform: translateY(-1px);
 }
 
-.home-mode-pill.home-mode-active {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
-}
-
 .home-mode-icon {
   font-size: 1.1rem;
   flex-shrink: 0;

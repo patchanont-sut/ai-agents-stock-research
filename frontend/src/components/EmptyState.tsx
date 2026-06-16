@@ -103,20 +103,18 @@ export function EmptyState({ symbol, isLoading, onSymbolChange, onSubmit, onTick
 
         {/* Mode switch */}
         <div className="home-mode-row">
-          <button className="home-mode-pill" onClick={() => onModeChange('single')}>
-            <span className="home-mode-icon">◆</span>
-            <span className="home-mode-text">
-              <strong>{t('singleMode')}</strong>
-              <small>{t('singleModeDesc')}</small>
-            </span>
-          </button>
-          <button className="home-mode-pill" onClick={() => onModeChange('compare')}>
-            <span className="home-mode-icon">◈</span>
-            <span className="home-mode-text">
-              <strong>{t('compareMode')}</strong>
-              <small>{t('compareModeDesc')}</small>
-            </span>
-          </button>
+          {[
+            { value: 'single' as const, icon: '◆', titleKey: 'singleMode', descriptionKey: 'singleModeDesc' },
+            { value: 'compare' as const, icon: '◈', titleKey: 'compareMode', descriptionKey: 'compareModeDesc' },
+          ].map((mode) => (
+            <button key={mode.value} className="home-mode-pill" onClick={() => onModeChange(mode.value)}>
+              <span className="home-mode-icon">{mode.icon}</span>
+              <span className="home-mode-text">
+                <strong>{t(mode.titleKey)}</strong>
+                <small>{t(mode.descriptionKey)}</small>
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Search card */}

@@ -64,7 +64,6 @@ export default function App() {
   const hasCompleteResult = Boolean(result) && !isLoading && !error;
   const showHeaderSearch = hasResult;
   const showHeaderModeSwitch = hasResult;
-  const analysisId = result?.id;
 
   // Scroll-triggered visibility for section headings and cards
   useEffect(() => {

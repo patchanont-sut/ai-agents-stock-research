@@ -89,12 +89,6 @@ async def health_check():
         "status": "ok",
         "service": "MarketMind AI Dashboard",
         "version": "1.0.0",
-        "cache_stats": cache.stats(),
-        "tools_available": len(tool_registry),
-        "tool_names": tool_registry.tool_names,
-        "deepseek_configured": bool(settings.DEEPSEEK_API_KEY),
-        "finnhub_configured": bool(settings.FINNHUB_API_KEY),
-        "alphavantage_configured": bool(settings.ALPHA_VANTAGE_API_KEY),
     }
 
 
