@@ -147,7 +147,8 @@ class ThaiTranslationService:
                     except Exception as e:
                         logger.error("Thai translation fallback failed for %s: %s", field_spec.label, e)
 
-                    report.failed.append(field_spec.label)
+                    if field_spec.required:
+                        report.failed.append(field_spec.label)
 
         report.missing_required = self._missing_required(fields)
         return report
@@ -248,41 +249,7 @@ class ThaiTranslationService:
         return parsed
 
     async def _translate_value(self, client: httpx.AsyncClient, value: Any) -> Any:
-        if isinstance(value, list):
-            translated_items = []
-            for item in value:
-                translated_items.append(await self._translate_text(client, str(item)))
-            return translated_items
-        return await self._translate_text(client, str(value))
-
-    async def _translate_text(self, client: httpx.AsyncClient, text: str) -> str:
-        prompt = (
-            "Translate this financial analysis text from English to natural Thai. "
-            "Keep stock symbols, company names, numbers, and financial terms such as P/E, PEG, EPS, Beta, BUY, HOLD, and SELL in English. "
-            "Return ONLY the Thai translation text. No markdown, no explanations.\n\n"
-            f"{text}"
-        )
-        request = {
-            "model": settings.DEEPSEEK_MODEL,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a professional Thai translator for investment analysis.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "max_tokens": 2000,
-            "temperature": 0.2,
-            "thinking": {"type": "disabled"},
-        }
-
-        response = await client.post(self.url, headers=self.headers, json=request)
-        response.raise_for_status()
-        data = response.json()
-
-        message = data.get("choices", [{}])[0].get("message", {})
-        content = message.get("content") or message.get("reasoning_content") or ""
-        return _strip_code_fence(content).strip()
+        return (await self._translate_payload(client, {"value": value})).get("value", value)
 
     def _is_valid_translation(self, translated: Any, original: Any) -> bool:
         if isinstance(original, list):
