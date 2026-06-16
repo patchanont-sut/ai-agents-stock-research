@@ -115,20 +115,3 @@ async def get_fed_funds_rate() -> Optional[dict]:
         }
     return None
 
-
-async def get_sector_performance() -> Optional[dict]:
-    """Get sector performance data."""
-    data = await alpha_vantage_request("SECTOR")
-    if not data:
-        return None
-
-    result = {}
-    for sector, change_str in data.items():
-        if sector.startswith("Rank"):
-            # Extract sector name from Rank key
-            name = sector.replace("Rank A: ", "").replace("Rank B: ", "").replace("Real-Time", "").strip()
-            try:
-                result[name] = float(change_str.replace("%", ""))
-            except (ValueError, AttributeError):
-                pass
-    return result

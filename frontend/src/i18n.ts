@@ -266,6 +266,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Comparison progress
     compareProgressOf: "{done} of {total} symbols complete",
+
+    // Demo
+    demoLoadBtn: "Load Demo",
   },
 
   th: {
@@ -525,6 +528,9 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Comparison progress
     compareProgressOf: "เสร็จแล้ว {done} จาก {total} สัญลักษณ์",
+
+    // Demo
+    demoLoadBtn: "โหลดตัวอย่าง",
   },
 };
 

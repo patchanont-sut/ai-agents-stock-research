@@ -1,6 +1,6 @@
-// MarketMind AI Dashboard — Enhanced Empty State
+// MarketMind AI Dashboard — Home Empty State
 import type React from 'react';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { t } from '../i18n';
 
 interface EmptyStateProps {
@@ -11,6 +11,7 @@ interface EmptyStateProps {
   onSubmit: (event: React.FormEvent) => void;
   onTickerSelect: (ticker: string) => void;
   onModeChange: (mode: 'single' | 'compare') => void;
+  onLoadDemo: () => Promise<void>;
 }
 
 const SUGGESTED_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMD'];
@@ -54,15 +55,12 @@ function filterTickers(query: string): TickerInfo[] {
   ).slice(0, 6);
 }
 
-export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmit, onTickerSelect, onModeChange }: EmptyStateProps) {
+export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmit, onTickerSelect, onModeChange, onLoadDemo }: EmptyStateProps) {
   const [rotatingIndex, setRotatingIndex] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const heroRef = useRef<HTMLElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const [visibleElements, setVisibleElements] = useState<Set<string>>(new Set());
 
   // Filtered suggestions
   const suggestions = useMemo(() => filterTickers(symbol), [symbol]);
@@ -83,40 +81,6 @@ export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmi
     return () => clearInterval(stepTimer);
   }, []);
 
-  // Staggered entrance with IntersectionObserver
-  useEffect(() => {
-    const hero = heroRef.current;
-    if (!hero) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const target = entry.target as HTMLElement;
-            const el = target.dataset.animateEl;
-            if (el) {
-              setVisibleElements((prev) => new Set(prev).add(el));
-            }
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
-    );
-
-    const animatableEls = hero.querySelectorAll('[data-animate-el]');
-    animatableEls.forEach((el) => observer.observe(el));
-
-    // Trigger initial visible elements immediately
-    setTimeout(() => {
-      animatableEls.forEach((el) => {
-        const elName = (el as HTMLElement).dataset.animateEl;
-        if (elName) setVisibleElements((prev) => new Set(prev).add(elName));
-      });
-    }, 100);
-
-    return () => observer.disconnect();
-  }, []);
-
   // Close suggestions on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -133,73 +97,26 @@ export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmi
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Mouse-tracking gradient aura
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
-    const hero = heroRef.current;
-    if (!hero) return;
-    const rect = hero.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    hero.style.setProperty('--mx', `${x}%`);
-    hero.style.setProperty('--my', `${y}%`);
-  }, []);
-
-  const isVisible = (el: string) => visibleElements.has(el);
-
   const rotatingSymbol = ROTATING_TICKERS[rotatingIndex];
   const rotatingName = TICKER_LOOKUP.find((t) => t.symbol === rotatingSymbol)?.name || rotatingSymbol;
 
   return (
-    <section
-      className="home-hero home-hero-enhanced"
-      ref={heroRef}
-      onMouseMove={handleMouseMove}
-    >
-      {/* Dynamic gradient aura */}
-      <div className="home-aura" aria-hidden="true" />
-      <div className="home-aura home-aura-secondary" aria-hidden="true" />
-
+    <section className="home-hero">
       <div className="home-copy">
-        <div
-          className={`home-eyebrow home-anim ${isVisible('eyebrow') ? 'visible' : ''}`}
-          data-animate-el="eyebrow"
-        >
-          {t('homeEyebrow')}
-        </div>
+        <div className="home-eyebrow">{t('homeEyebrow')}</div>
+        <h1>{t('homeTitle')}</h1>
+        <p className="home-subtitle">{t('homeSubtitle')}</p>
 
-        <h1
-          className={`home-anim ${isVisible('title') ? 'visible' : ''}`}
-          data-animate-el="title"
-        >
-          {t('homeTitle')}
-        </h1>
-
-        <p
-          className={`home-subtitle home-anim ${isVisible('subtitle') ? 'visible' : ''}`}
-          data-animate-el="subtitle"
-        >
-          {t('homeSubtitle')}
-        </p>
-
-        {/* Mode switch moved into hero */}
-        <div
-          className={`home-mode-row home-anim ${isVisible('mode') ? 'visible' : ''}`}
-          data-animate-el="mode"
-        >
-          <button
-            className="home-mode-pill"
-            onClick={() => onModeChange('single')}
-          >
+        {/* Mode switch */}
+        <div className="home-mode-row">
+          <button className="home-mode-pill" onClick={() => onModeChange('single')}>
             <span className="home-mode-icon">◆</span>
             <span className="home-mode-text">
               <strong>{t('singleMode')}</strong>
               <small>{t('singleModeDesc')}</small>
             </span>
           </button>
-          <button
-            className="home-mode-pill"
-            onClick={() => onModeChange('compare')}
-          >
+          <button className="home-mode-pill" onClick={() => onModeChange('compare')}>
             <span className="home-mode-icon">◈</span>
             <span className="home-mode-text">
               <strong>{t('compareMode')}</strong>
@@ -209,11 +126,7 @@ export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmi
         </div>
 
         {/* Search card */}
-        <form
-          className={`home-search-card home-anim ${isVisible('search') ? 'visible' : ''}`}
-          data-animate-el="search"
-          onSubmit={onSubmit}
-        >
+        <form className="home-search-card" onSubmit={onSubmit}>
           <label className="home-search-label" htmlFor="home-symbol">
             {t('homeSearchLabel')}
           </label>
@@ -237,11 +150,8 @@ export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmi
                 disabled={isLoading}
                 autoFocus
               />
-              <span className="home-search-hint" aria-hidden="true">
-                ↵
-              </span>
+              <span className="home-search-hint" aria-hidden="true">↵</span>
 
-              {/* Smart suggestions dropdown */}
               {showSuggestions && suggestions.length > 0 && (
                 <div className="ticker-suggestions" ref={suggestionsRef}>
                   {suggestions.map((t) => (
@@ -287,11 +197,16 @@ export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmi
           </div>
         </form>
 
-        {/* Features */}
-        <div
-          className={`home-feature-grid home-anim ${isVisible('features') ? 'visible' : ''}`}
-          data-animate-el="features"
+        <button
+          type="button"
+          className="home-search-button home-demo-button"
+          onClick={() => onLoadDemo()}
         >
+          {t('demoLoadBtn')}
+        </button>
+
+        {/* Features */}
+        <div className="home-feature-grid">
           <span>{t('homeFeatureDecision')}</span>
           <span>{t('homeFeatureDebate')}</span>
           <span>{t('homeFeatureSources')}</span>
@@ -299,12 +214,7 @@ export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmi
       </div>
 
       {/* Preview card */}
-      <div
-        className={`home-preview-card home-preview-enhanced home-anim ${isVisible('preview') ? 'visible' : ''}`}
-        ref={previewRef}
-        data-animate-el="preview"
-        aria-hidden="true"
-      >
+      <div className="home-preview-card" aria-hidden="true">
         <div className="preview-header">
           <span className="preview-symbol">
             <span className="preview-symbol-rotating">{rotatingSymbol}</span>

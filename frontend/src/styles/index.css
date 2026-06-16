@@ -309,10 +309,6 @@ html:lang(th) .hero-action-badge {
   grid-template-columns: 1fr 1fr;
 }
 
-.dashboard-row-3 {
-  grid-template-columns: repeat(3, 1fr);
-}
-
 /* ── Section headings (animated on scroll) ── */
 .section-heading {
   display: flex;
@@ -418,91 +414,6 @@ html:lang(th) .hero-action-badge {
   opacity: 1;
 }
 
-/* ── Sentiment Gauge ── */
-.sentiment-gauge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-}
-
-.gauge-bar {
-  width: 100%;
-  height: 10px;
-  background: linear-gradient(to right, var(--red) 0%, #e8c97b 50%, var(--green) 100%);
-  border-radius: 5px;
-  position: relative;
-  overflow: visible;
-}
-
-.gauge-indicator {
-  position: absolute;
-  top: -6px;
-  width: 4px;
-  height: 22px;
-  background: var(--text-primary);
-  border-radius: 2px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-  transition: left 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.gauge-score {
-  font-size: 2.6rem;
-  font-weight: 650;
-  letter-spacing: -0.03em;
-  line-height: 1;
-}
-
-.gauge-label {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 600;
-}
-
-.score-positive { color: var(--green); }
-.score-negative { color: var(--red); }
-.score-neutral { color: var(--yellow); }
-
-/* ── CIO Decision Card ── */
-.cio-card {
-  background: var(--bg-card);
-  border: 1.5px solid var(--border-light);
-  border-radius: var(--radius);
-  padding: 32px 28px;
-  text-align: center;
-  transition: all var(--transition-slow);
-}
-
-.cio-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.cio-action {
-  font-size: 2.8rem;
-  font-weight: 700;
-  margin: 8px 0 16px;
-  letter-spacing: 0.04em;
-}
-
-.cio-action-BUY { 
-  color: var(--green);
-  border-color: var(--green-border);
-}
-.cio-action-HOLD { 
-  color: var(--yellow);
-  border-color: var(--yellow-border);
-}
-.cio-action-SELL { 
-  color: var(--red);
-  border-color: var(--red-border);
-}
-
-.cio-card.cio-action-BUY { border-color: var(--green-border); background: var(--green-bg); }
-.cio-card.cio-action-HOLD { border-color: var(--yellow-border); background: var(--yellow-bg); }
-.cio-card.cio-action-SELL { border-color: var(--red-border); background: var(--red-bg); }
-
 /* ── Bull/Bear Split Panel ── */
 .split-panel {
   display: grid;
@@ -573,40 +484,6 @@ html:lang(th) .hero-action-badge {
 .confidence-bull { background: var(--green); }
 .confidence-bear { background: var(--red); }
 
-/* ── Risk Card ── */
-.risk-indicators {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.risk-indicator {
-  flex: 1;
-  text-align: center;
-  padding: 18px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-light);
-}
-
-.risk-indicator .risk-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.risk-indicator .risk-value {
-  font-size: 1.05rem;
-  font-weight: 650;
-}
-
-.risk-Low { color: var(--green); }
-.risk-Medium { color: var(--yellow); }
-.risk-High { color: var(--red); }
-
 /* ── Valuation Panel ── */
 .metrics-grid {
   display: grid;
@@ -634,31 +511,6 @@ html:lang(th) .hero-action-badge {
   font-size: 1.25rem;
   font-weight: 650;
   color: var(--text-primary);
-}
-
-.verdict {
-  margin-top: 20px;
-  padding: 14px 18px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.92rem;
-  text-align: center;
-}
-
-.verdict-undervalued { 
-  background: var(--green-bg); 
-  color: var(--green);
-  border: 1px solid var(--green-border);
-}
-.verdict-overvalued { 
-  background: var(--red-bg); 
-  color: var(--red);
-  border: 1px solid var(--red-border);
-}
-.verdict-fair { 
-  background: var(--yellow-bg); 
-  color: var(--yellow);
-  border: 1px solid var(--yellow-border);
 }
 
 /* ── Debate Viewer ── */
@@ -834,77 +686,6 @@ html:lang(th) .hero-action-badge {
   position: relative;
   overflow: hidden;
 }
-
-/* ── Dynamic Gradient Aura ── */
-.home-aura {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
-.home-hero-enhanced .home-aura {
-  opacity: 1;
-}
-
-.home-aura::before {
-  content: "";
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.55;
-  background: radial-gradient(
-    circle at center,
-    rgba(184, 148, 92, 0.22) 0%,
-    rgba(123, 155, 106, 0.12) 40%,
-    transparent 70%
-  );
-  top: var(--my, 25%);
-  left: var(--mx, 35%);
-  transform: translate(-50%, -50%);
-  transition: top 0.6s ease-out, left 0.6s ease-out;
-}
-
-.home-aura-secondary::before {
-  width: 400px;
-  height: 400px;
-  filter: blur(100px);
-  opacity: 0.35;
-  background: radial-gradient(
-    circle at center,
-    rgba(74, 108, 247, 0.15) 0%,
-    rgba(123, 155, 106, 0.08) 50%,
-    transparent 70%
-  );
-  top: var(--my, 60%);
-  left: var(--mx, 65%);
-  transform: translate(-50%, -50%);
-  transition: top 1s ease-out, left 1s ease-out;
-}
-
-/* ── Staggered Entrance Animations ── */
-.home-anim {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-.home-anim.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-[data-animate-el="eyebrow"].visible { transition-delay: 0s; }
-[data-animate-el="title"].visible { transition-delay: 0.1s; }
-[data-animate-el="subtitle"].visible { transition-delay: 0.2s; }
-[data-animate-el="mode"].visible { transition-delay: 0.3s; }
-[data-animate-el="search"].visible { transition-delay: 0.4s; }
-[data-animate-el="features"].visible { transition-delay: 0.5s; }
-[data-animate-el="preview"].visible { transition-delay: 0.35s; }
 
 /* ── Mode Switch (in-hero pill-tabs) ── */
 .home-mode-row {
@@ -1101,17 +882,6 @@ html:lang(th) .hero-action-badge {
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Preview Card 3D Tilt Parallax ── */
-.home-preview-enhanced {
-  perspective: 800px;
-  transition: transform 0.3s ease-out;
-}
-
-.home-preview-enhanced:hover {
-  transform: perspective(800px) rotateY(-2deg) rotateX(2deg) translateY(-4px);
-  box-shadow: 0 28px 80px rgba(29, 27, 24, 0.16);
-}
-
 .home-copy {
   display: flex;
   flex-direction: column;
@@ -1226,6 +996,10 @@ html:lang(th) .hero-action-badge {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.home-demo-button {
+  margin-top: 14px;
 }
 
 /* ── Ticker Chips (with pop animation) ── */
@@ -1467,32 +1241,6 @@ html:lang(th) .hero-action-badge {
 .retry-btn:hover {
   background: #3d3a36;
   transform: translateY(-1px);
-}
-
-/* ── Stock Header ── */
-.stock-header {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 4px 0 8px;
-}
-
-.stock-header h1 {
-  font-size: 1.6rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
-}
-
-.stock-symbol-tag {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.stock-price-tag {
-  font-size: 1.4rem;
-  font-weight: 650;
-  letter-spacing: -0.02em;
 }
 
 .stock-badge {

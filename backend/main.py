@@ -1,19 +1,13 @@
 """
 MarketMind AI Dashboard - FastAPI Application Entry Point
-Serves the analysis API, WebSocket streaming, and static files.
 """
 from __future__ import annotations
 import logging
-import os
-import subprocess
-import sys
-import time
 import uuid
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from pathlib import Path
+import json
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,7 +28,6 @@ from core.models import (
 from core.orchestrator import run_full_pipeline, get_analysis_result, get_analysis_progress, get_analysis_trace
 from core.translation_service import ThaiTranslationService
 from core.comparison import rank_comparison, normalize_compare_symbols
-import core.translation_service as translation_service_module
 
 # ── Logging Setup ──
 logging.basicConfig(
@@ -45,10 +38,6 @@ logger = logging.getLogger(__name__)
 
 # ── In-memory analysis store (for tracking in-progress analyses) ──
 _pending_analyses: dict[str, AnalysisResult] = {}
-SERVER_START_TIME = datetime.now(timezone.utc).isoformat()
-BACKEND_ENTRYPOINT_FILE = str(Path(__file__).resolve())
-TRANSLATION_SERVICE_FILE = str(Path(translation_service_module.__file__).resolve())
-BUILD_MARKER = f"{BACKEND_ENTRYPOINT_FILE}@{SERVER_START_TIME}"
 
 
 @asynccontextmanager
@@ -66,9 +55,6 @@ async def lifespan(app: FastAPI):
     logger.info(f"Cache entries loaded: {cache.size}")
     logger.info(f"Tools registered: {len(tool_registry)}")
     logger.info(f"CORS origins: {settings.CORS_ORIGINS}")
-    logger.info(f"Backend entrypoint: {BACKEND_ENTRYPOINT_FILE}")
-    logger.info(f"Translation service: {TRANSLATION_SERVICE_FILE}")
-    logger.info(f"Server start marker: {SERVER_START_TIME}")
     logger.info("Server ready at http://{}:{}".format(settings.HOST, settings.PORT))
     logger.info("=" * 50)
     yield
@@ -110,10 +96,6 @@ async def health_check():
         "finnhub_configured": bool(settings.FINNHUB_API_KEY),
         "alphavantage_configured": bool(settings.ALPHA_VANTAGE_API_KEY),
         "translation_service_loaded": True,
-        "translation_service_file": TRANSLATION_SERVICE_FILE,
-        "backend_entrypoint_file": BACKEND_ENTRYPOINT_FILE,
-        "server_start_time": SERVER_START_TIME,
-        "build_marker": BUILD_MARKER,
     }
 
 
@@ -138,8 +120,6 @@ async def start_analysis(request: AnalyzeRequest, background_tasks: BackgroundTa
     # Fire background task for the full agent pipeline
     language = request.language or "en"
     background_tasks.add_task(run_full_pipeline, symbol, analysis_id, language)
-
-    logger.info(f"Analysis started: {analysis_id} for {symbol}")
 
     return AnalyzeResponse(
         analysis_id=analysis_id,
@@ -693,154 +673,37 @@ async def get_memo_markdown(analysis_id: str):
     )
 
 
+# ── Demo / Offline Endpoint ──
+
+@app.get("/api/demo/analysis")
+async def get_demo_analysis():
+    """Return a pre-built synthetic analysis result.
+
+    This endpoint requires no API keys, no LLM calls, and no live
+    financial data.  It is safe for portfolio demos and offline use.
+    """
+    synthetic_path = Path(__file__).resolve().parent.parent / "test_synthetic.json"
+
+    try:
+        raw = json.loads(synthetic_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(status_code=503, detail="Demo data unavailable")
+
+    result_dict = raw.get("result")
+    if not result_dict:
+        raise HTTPException(status_code=503, detail="Demo result missing")
+
+    try:
+        demo_result = AnalysisResult.model_validate(result_dict)
+    except Exception:
+        raise HTTPException(status_code=503, detail="Demo result invalid")
+
+    return demo_result.model_dump(exclude_none=True)
+
+
 # ── Run directly ──
 if __name__ == "__main__":
     import uvicorn
-
-    def _list_port_processes(port: int) -> list[int]:
-        process_ids: set[int] = set()
-
-        if os.name == "nt":
-            try:
-                completed = subprocess.run(
-                    ["netstat", "-ano"],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                for line in completed.stdout.splitlines():
-                    if f":{port}" in line and "LISTENING" in line:
-                        parts = line.split()
-                        if parts and parts[-1].isdigit():
-                            process_ids.add(int(parts[-1]))
-            except Exception as exc:
-                logger.warning("Could not inspect port %s with netstat: %s", port, exc)
-        else:
-            try:
-                completed = subprocess.run(
-                    ["lsof", "-ti", f":{port}"],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                for line in completed.stdout.splitlines():
-                    if line.strip().isdigit():
-                        process_ids.add(int(line.strip()))
-            except Exception as exc:
-                logger.warning("Could not inspect port %s with lsof: %s", port, exc)
-
-        return sorted(process_ids)
-
-    def _process_command_line(process_id: int) -> str | None:
-        if process_id == os.getpid():
-            return " ".join(sys.argv)
-
-        if os.name == "nt":
-            completed = subprocess.run(
-                [
-                    "powershell",
-                    "-NoProfile",
-                    "-Command",
-                    (
-                        "try { "
-                        f"(Get-CimInstance Win32_Process -Filter \"ProcessId={process_id}\").CommandLine "
-                        "} catch { '' }"
-                    ),
-                ],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            command_line = completed.stdout.strip()
-            return command_line or None
-
-        try:
-            completed = subprocess.run(
-                ["ps", "-p", str(process_id), "-o", "args="],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            command_line = completed.stdout.strip()
-            return command_line or None
-        except Exception:
-            return None
-
-    def _is_backend_python_process(command_line: str) -> bool:
-        normalized = command_line.lower().replace("\\", "/")
-        backend_dir = str(Path(__file__).resolve().parent).lower().replace("\\", "/")
-
-        return (
-            "python" in normalized
-            and (
-                "uvicorn" in normalized
-                or "main.py" in normalized
-                or backend_dir in normalized
-            )
-        )
-
-    def _stop_process(process_id: int) -> None:
-        if process_id == os.getpid():
-            return
-
-        if os.name == "nt":
-            subprocess.run(
-                ["taskkill", "/PID", str(process_id), "/F"],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-        else:
-            try:
-                os.kill(process_id, 15)
-            except ProcessLookupError:
-                return
-
-    def _clear_backend_port(port: int) -> None:
-        for process_id in _list_port_processes(port):
-            command_line = _process_command_line(process_id)
-            if not command_line:
-                logger.info(
-                    "Ignoring stale port %s entry for PID %s; process is already gone",
-                    port,
-                    process_id,
-                )
-                continue
-
-            if not _is_backend_python_process(command_line):
-                raise SystemExit(
-                    f"Port {port} is already used by a non-backend process (PID {process_id}): "
-                    f"{command_line}"
-                )
-
-            logger.info("Stopping existing backend process on port %s (PID %s)", port, process_id)
-            _stop_process(process_id)
-
-        time.sleep(1)
-        live_processes = []
-        for process_id in _list_port_processes(port):
-            command_line = _process_command_line(process_id)
-            if command_line:
-                live_processes.append((process_id, command_line))
-
-        if live_processes:
-            details = "; ".join(f"PID {pid}: {cmd}" for pid, cmd in live_processes)
-            raise SystemExit(f"Port {port} is still occupied after cleanup: {details}")
-
-        try:
-            with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=2) as response:
-                body = response.read().decode("utf-8", errors="replace")
-            raise SystemExit(
-                f"Port {port} still has an HTTP server responding after cleanup. "
-                f"Close the old backend terminal, then run `python main.py` again. "
-                f"Health response: {body[:500]}"
-            )
-        except urllib.error.URLError:
-            return
-        except TimeoutError:
-            return
-
-    _clear_backend_port(settings.PORT)
     uvicorn.run(
         "main:app",
         host="127.0.0.1",

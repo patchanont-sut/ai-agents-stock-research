@@ -13,6 +13,7 @@ interface UseAnalysisReturn {
   completedAgents: string[];
   trace: AnalysisTrace | null;
   startAnalysis: (symbol: string, language?: Language) => Promise<void>;
+  loadDemo: () => Promise<void>;
   retry: (symbol: string, language?: Language) => void;
 }
 
@@ -130,7 +131,7 @@ export function useAnalysis(): UseAnalysisReturn {
     setCompletedAgents([]);
 
     try {
-      const response = await api.startAnalysis(symbol, false, language);
+      const response = await api.startAnalysis(symbol, language);
       setAnalysisId(response.analysis_id);
       setStatus(response.status as AnalysisStatus);
 
@@ -148,6 +149,27 @@ export function useAnalysis(): UseAnalysisReturn {
     }
   }, [startAnalysis]);
 
+  const loadDemo = useCallback(async () => {
+    stopPolling();
+    setError(null);
+    setResult(null);
+    setTrace(null);
+    setCompletedAgents([]);
+    setIsLoading(true);
+    setStatus('running');
+
+    try {
+      const demoResult = await api.getDemoAnalysis();
+      setResult(demoResult);
+      setStatus(demoResult.status as AnalysisStatus);
+    } catch (e: any) {
+      setStatus('failed');
+      setError(`Failed to load demo: ${e.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [stopPolling]);
+
   useEffect(() => {
     return () => {
       stopPolling();
@@ -163,6 +185,7 @@ export function useAnalysis(): UseAnalysisReturn {
     completedAgents,
     trace,
     startAnalysis,
+    loadDemo,
     retry,
   };
 }

@@ -24,64 +24,14 @@ class MemoryStore:
             "symbol": symbol,
             "pipeline_started": datetime.now().isoformat(),
         }
-        self._history: list[dict] = []  # chronological log of writes
 
     def write(self, key: str, value: Any) -> None:
         """Store a value by key. Overwrites if key exists."""
         self._store[key] = value
-        self._history.append({
-            "key": key,
-            "timestamp": datetime.now().isoformat(),
-            "action": "write",
-        })
 
     def read(self, key: str) -> Optional[Any]:
         """Retrieve a value by key. Returns None if not found."""
         return self._store.get(key)
-
-    def read_all(self) -> dict[str, Any]:
-        """Return all stored data."""
-        return dict(self._store)
-
-    def get_context_summary(self) -> str:
-        """
-        Generate a human-readable summary of all context so far.
-        Useful as part of the system prompt for each agent.
-        """
-        lines = [f"Analysis for: {self.symbol}"]
-        lines.append(f"Started: {self._store.get('pipeline_started', 'unknown')}")
-        lines.append("─" * 40)
-
-        # Order matters - show agents in pipeline order
-        agent_keys = [
-            "research_output", "sentiment_output", "valuation_output",
-            "bull_output", "bear_output", "risk_output",
-            "debate_output", "cio_output",
-        ]
-
-        key_labels = {
-            "research_output": "Research Agent",
-            "sentiment_output": "Sentiment Agent",
-            "valuation_output": "Valuation Agent",
-            "bull_output": "Bull Case Agent",
-            "bear_output": "Bear Case Agent",
-            "risk_output": "Risk Agent",
-            "debate_output": "Debate Agent",
-            "cio_output": "CIO Agent",
-        }
-
-        for key in agent_keys:
-            if key in self._store:
-                label = key_labels.get(key, key)
-                lines.append(f"\n[{label}]:")
-                value = self._store[key]
-                if hasattr(value, "model_dump"):
-                    import json
-                    lines.append(json.dumps(value.model_dump(), indent=2, default=str))
-                else:
-                    lines.append(str(value))
-
-        return "\n".join(lines)
 
     def get_prompt_context(self, exclude_current: Optional[str] = None) -> str:
         """
@@ -130,11 +80,6 @@ class MemoryStore:
         if isinstance(value, dict):
             return {key: self._compact_for_prompt(item) for key, item in value.items()}
         return value
-
-    def clear(self):
-        """Reset memory (for session reuse)."""
-        self._store = {"symbol": self.symbol}
-        self._history = []
 
     def __repr__(self):
         return f"<MemoryStore({self.symbol}): {len(self._store)} keys>"

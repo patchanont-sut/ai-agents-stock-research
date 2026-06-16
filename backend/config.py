@@ -81,7 +81,6 @@ class Settings:
     MAX_NEWS_ARTICLES: int = int(os.getenv("MAX_NEWS_ARTICLES", "15"))
     REDDIT_POST_LIMIT: int = int(os.getenv("REDDIT_POST_LIMIT", "25"))
     AGENT_TIMEOUT: int = int(os.getenv("AGENT_TIMEOUT", "60"))  # seconds per agent
-    MAX_RETRIES: int = int(os.getenv("MAX_RETRIES", "2"))
 
     # ── Logging ──
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")

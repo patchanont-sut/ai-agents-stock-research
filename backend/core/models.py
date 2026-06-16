@@ -267,7 +267,6 @@ class AnalysisResult(BaseModel):
 
 class AnalyzeRequest(BaseModel):
     symbol: str = Field(..., min_length=1, max_length=30, description="Stock ticker symbol (e.g. AAPL)")
-    force_refresh: bool = Field(default=False, description="Bypass cache")
     language: str = Field(default="en", description="Response language: 'en' or 'th'")
 
 
@@ -292,7 +291,6 @@ class CompareRequest(BaseModel):
     """Request to compare multiple stocks side-by-side."""
     symbols: list[str] = Field(..., min_length=2, max_length=4, description="Stock ticker symbols (2-4)")
     language: str = Field(default="en", description="Response language: 'en' or 'th'")
-    force_refresh: bool = Field(default=False, description="Bypass cache for all symbols")
 
 
 class CompareStockSummary(BaseModel):
