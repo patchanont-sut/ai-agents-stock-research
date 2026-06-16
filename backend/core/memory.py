@@ -4,6 +4,7 @@ Provides append-only context that agents share during an analysis session.
 Every agent can read all previous agent outputs and write its own.
 """
 from __future__ import annotations
+import json
 from datetime import datetime
 from typing import Any, Optional
 
@@ -59,9 +60,7 @@ class MemoryStore:
             if value is not None:
                 has_previous = True
                 if hasattr(value, "model_dump"):
-                    data = self._compact_for_prompt(value.model_dump())
-                    import json
-                    lines.append(f"\n[{label}]: {json.dumps(data, indent=2, default=str)}")
+                    lines.append(f"\n[{label}]: {json.dumps(self._compact_for_prompt(value.model_dump()), indent=2, default=str)}")
                 else:
                     lines.append(f"\n[{label}]: {str(value)[:MAX_CONTEXT_STRING_LENGTH]}")
 

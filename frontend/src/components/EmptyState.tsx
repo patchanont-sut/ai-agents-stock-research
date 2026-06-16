@@ -6,7 +6,6 @@ import { t } from '../i18n';
 interface EmptyStateProps {
   symbol: string;
   isLoading: boolean;
-  appMode: 'single' | 'compare';
   onSymbolChange: (symbol: string) => void;
   onSubmit: (event: React.FormEvent) => void;
   onTickerSelect: (ticker: string) => void;
@@ -16,12 +15,7 @@ interface EmptyStateProps {
 
 const SUGGESTED_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMD'];
 
-interface TickerInfo {
-  symbol: string;
-  name: string;
-}
-
-const TICKER_LOOKUP: TickerInfo[] = [
+const TICKER_LOOKUP: { symbol: string; name: string }[] = [
   { symbol: 'AAPL', name: 'Apple Inc.' },
   { symbol: 'MSFT', name: 'Microsoft Corp.' },
   { symbol: 'NVDA', name: 'NVIDIA Corp.' },
@@ -47,7 +41,7 @@ const TICKER_LOOKUP: TickerInfo[] = [
 const ROTATING_TICKERS = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'GOOGL'];
 const ROTATION_INTERVAL = 3500;
 
-function filterTickers(query: string): TickerInfo[] {
+function filterTickers(query: string): { symbol: string; name: string }[] {
   if (!query.trim()) return [];
   const upper = query.trim().toUpperCase();
   return TICKER_LOOKUP.filter(
@@ -55,7 +49,7 @@ function filterTickers(query: string): TickerInfo[] {
   ).slice(0, 6);
 }
 
-export function EmptyState({ symbol, isLoading, appMode, onSymbolChange, onSubmit, onTickerSelect, onModeChange, onLoadDemo }: EmptyStateProps) {
+export function EmptyState({ symbol, isLoading, onSymbolChange, onSubmit, onTickerSelect, onModeChange, onLoadDemo }: EmptyStateProps) {
   const [rotatingIndex, setRotatingIndex] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeStep, setActiveStep] = useState(0);

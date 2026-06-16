@@ -32,7 +32,7 @@ export default function App() {
   const [symbol, setSymbol] = useState('');
   const [lang, setLang] = useState<Language>(getLanguage());
   const [appMode, setAppMode] = useState<AppMode>('single');
-  const { result, status, error, isLoading, completedAgents, trace, startAnalysis, loadDemo, retry } = useAnalysis();
+  const { result, error, isLoading, completedAgents, trace, startAnalysis, loadDemo, retry } = useAnalysis();
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -174,7 +174,6 @@ export default function App() {
               <EmptyState
                 symbol={symbol}
                 isLoading={isLoading}
-                appMode={appMode}
                 onSymbolChange={setSymbol}
                 onSubmit={handleSubmit}
                 onTickerSelect={handleTickerSelect}

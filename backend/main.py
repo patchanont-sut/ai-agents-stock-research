@@ -95,7 +95,6 @@ async def health_check():
         "deepseek_configured": bool(settings.DEEPSEEK_API_KEY),
         "finnhub_configured": bool(settings.FINNHUB_API_KEY),
         "alphavantage_configured": bool(settings.ALPHA_VANTAGE_API_KEY),
-        "translation_service_loaded": True,
     }
 
 
@@ -427,9 +426,8 @@ async def run_comparison_pipeline(symbols: list[str], compare_id: str, language:
     compare_result.summaries = summaries
 
     # Build comparison table
-    table: list[dict] = []
-    for s in summaries:
-        table.append({
+    compare_result.comparison_table = [
+        {
             "symbol": s.symbol,
             "company": s.company_name,
             "action": s.cio_action,
@@ -439,8 +437,9 @@ async def run_comparison_pipeline(symbols: list[str], compare_id: str, language:
             "valuation": s.valuation_verdict,
             "reliability": s.reliability_score,
             "grounding": s.grounding_score,
-        })
-    compare_result.comparison_table = table
+        }
+        for s in summaries
+    ]
 
     # Rank
     winner, rationale = rank_comparison(summaries)

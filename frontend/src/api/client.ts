@@ -2,13 +2,6 @@
 
 const BASE_URL = '/api';
 
-interface HealthResponse {
-  status: string;
-  service: string;
-  version: string;
-  translation_service_loaded: boolean;
-}
-
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE_URL}${url}`, {
     headers: {
