@@ -105,11 +105,6 @@ class ToolRegistry:
         self._schemas.append(schema)
         logger.info(f"Registered tool: {meta['name']}")
 
-    def register_many(self, *funcs: Callable):
-        """Register multiple tool functions."""
-        for func in funcs:
-            self.register(func)
-
     def get_tool_schemas(self) -> list[dict]:
         """Return all tool schemas in OpenAI function-calling format."""
         return self._schemas

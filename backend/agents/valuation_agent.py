@@ -1,6 +1,5 @@
 """MarketMind AI Dashboard - Valuation Agent"""
 from __future__ import annotations
-import json
 import logging
 from .base_agent import BaseAgent
 from core.models import ValuationOutput
@@ -77,27 +76,6 @@ Write all free-text fields in English."""
         )
         memory.write("valuation_output", output)
         return output
-
-    def _parse_json(self, text: str) -> object:
-        try:
-            return json.loads(BaseAgent._strip_json_fence(text))
-        except (json.JSONDecodeError, TypeError, ValueError):
-            return {"verdict": "Unknown", "explanation": text[:400] if isinstance(text, str) else ""}
-
-    def _coerce_parsed_json(self, parsed: object) -> dict:
-        """Return a valuation dict even when the model emits an unexpected JSON shape."""
-        if isinstance(parsed, dict):
-            return parsed
-
-        if isinstance(parsed, list):
-            for item in parsed:
-                if isinstance(item, dict):
-                    return item
-
-        return {
-            "verdict": "Unknown",
-            "explanation": "Valuation response was not a JSON object.",
-        }
 
     def _normalize_peers(self, peers: object) -> list[str]:
         """Keep peers as a safe list of non-empty strings."""

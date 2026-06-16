@@ -85,7 +85,6 @@ class Settings:
 
     # ── Logging ──
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
 
     def get_deepseek_chat_url(self) -> str:
         """Return the chat completions URL for official or legacy base URLs."""

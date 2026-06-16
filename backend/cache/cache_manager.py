@@ -137,32 +137,6 @@ class CacheManager:
         except Exception as e:
             logger.warning(f"Failed to persist cache key '{key}': {e}")
 
-    def set_many(self, items: dict[str, Any], ttl_seconds: int = 3600):
-        """Set multiple cache entries with same TTL."""
-        for key, value in items.items():
-            self.set(key, value, ttl_seconds)
-
-    def delete(self, key: str):
-        """Remove a cache entry."""
-        with self._lock:
-            self._memory.pop(key, None)
-        filepath = self._build_filepath(key)
-        try:
-            filepath.unlink(missing_ok=True)
-        except Exception:
-            pass
-
-    def clear(self):
-        """Clear all cache entries."""
-        with self._lock:
-            self._memory.clear()
-        for filepath in self._cache_dir.glob("*.json"):
-            try:
-                filepath.unlink(missing_ok=True)
-            except Exception:
-                pass
-        logger.info("Cache cleared")
-
     def prune_expired(self):
         """Remove all expired entries from memory and disk."""
         with self._lock:
