@@ -2,15 +2,25 @@
 import type React from 'react';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { t } from '../i18n';
+import { LiveMonitor } from './LiveMonitor';
 
 interface EmptyStateProps {
   symbol: string;
   isLoading: boolean;
+  history: {
+    id: string;
+    symbol: string;
+    action: string;
+    confidence: number | null;
+  }[];
+  watchlist: string[];
   onSymbolChange: (symbol: string) => void;
   onSubmit: (event: React.FormEvent) => void;
   onTickerSelect: (ticker: string) => void;
   onModeChange: (mode: 'single' | 'compare') => void;
   onLoadDemo: () => Promise<void>;
+  onAddToWatchlist: (ticker: string) => void;
+  onRemoveFromWatchlist: (ticker: string) => void;
 }
 
 const SUGGESTED_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMD'];
@@ -38,9 +48,6 @@ const TICKER_LOOKUP: { symbol: string; name: string }[] = [
   { symbol: 'INTC', name: 'Intel Corp.' },
 ];
 
-const ROTATING_TICKERS = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'GOOGL'];
-const ROTATION_INTERVAL = 3500;
-
 function filterTickers(query: string): { symbol: string; name: string }[] {
   if (!query.trim()) return [];
   const upper = query.trim().toUpperCase();
@@ -49,31 +56,25 @@ function filterTickers(query: string): { symbol: string; name: string }[] {
   ).slice(0, 6);
 }
 
-export function EmptyState({ symbol, isLoading, onSymbolChange, onSubmit, onTickerSelect, onModeChange, onLoadDemo }: EmptyStateProps) {
-  const [rotatingIndex, setRotatingIndex] = useState(0);
+export function EmptyState({
+  symbol,
+  isLoading,
+  history,
+  watchlist,
+  onSymbolChange,
+  onSubmit,
+  onTickerSelect,
+  onModeChange,
+  onLoadDemo,
+  onAddToWatchlist,
+  onRemoveFromWatchlist,
+}: EmptyStateProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
   // Filtered suggestions
   const suggestions = useMemo(() => filterTickers(symbol), [symbol]);
-
-  // Rotating ticker in preview
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRotatingIndex((prev) => (prev + 1) % ROTATING_TICKERS.length);
-    }, ROTATION_INTERVAL);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Animated pipeline steps
-  useEffect(() => {
-    const stepTimer = setInterval(() => {
-      setActiveStep((prev) => (prev + 1) % 4);
-    }, 2200);
-    return () => clearInterval(stepTimer);
-  }, []);
 
   // Close suggestions on outside click
   useEffect(() => {
@@ -91,15 +92,11 @@ export function EmptyState({ symbol, isLoading, onSymbolChange, onSubmit, onTick
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const rotatingSymbol = ROTATING_TICKERS[rotatingIndex];
-  const rotatingName = TICKER_LOOKUP.find((t) => t.symbol === rotatingSymbol)?.name || rotatingSymbol;
-
   return (
     <section className="home-hero">
       <div className="home-copy">
-        <div className="home-eyebrow">{t('homeEyebrow')}</div>
-        <h1>{t('homeTitle')}</h1>
-        <p className="home-subtitle">{t('homeSubtitle')}</p>
+        <h1 className="home-dashboard-title">{t('homeTitle')}</h1>
+        <p className="home-dashboard-subtitle">{t('homeSubtitle')}</p>
 
         {/* Mode switch */}
         <div className="home-mode-row">
@@ -178,8 +175,9 @@ export function EmptyState({ symbol, isLoading, onSymbolChange, onSubmit, onTick
                 className="ticker-chip"
                 type="button"
                 onClick={() => {
-                  onTickerSelect(ticker);
+                  onSymbolChange(ticker);
                   setShowSuggestions(false);
+                  inputRef.current?.focus();
                 }}
                 disabled={isLoading}
               >
@@ -189,79 +187,57 @@ export function EmptyState({ symbol, isLoading, onSymbolChange, onSubmit, onTick
           </div>
         </form>
 
-        <button
-          type="button"
-          className="home-search-button home-demo-button"
-          onClick={() => onLoadDemo()}
-        >
-          {t('demoLoadBtn')}
-        </button>
-
-        {/* Features */}
-        <div className="home-feature-grid">
-          <span>{t('homeFeatureDecision')}</span>
-          <span>{t('homeFeatureDebate')}</span>
-          <span>{t('homeFeatureSources')}</span>
-        </div>
-      </div>
-
-      {/* Preview card */}
-      <div className="home-preview-card" aria-hidden="true">
-        <div className="preview-header">
-          <span className="preview-symbol">
-            <span className="preview-symbol-rotating">{rotatingSymbol}</span>
-            <span className="preview-symbol-name">{rotatingName}</span>
-          </span>
-          <span className="preview-status">{t('homePreviewStatus')}</span>
-        </div>
-        <div className="preview-shell">
-          <div className="preview-section preview-section-primary">
-            <span className="preview-kicker">{t('homePreviewAction')}</span>
-            <div className="preview-timeline">
-              <div className={`preview-step ${activeStep >= 0 ? 'preview-step-active' : ''}`}>
-                <span>01</span>
-                <strong>{t('homePreviewStepResearch')}</strong>
-              </div>
-              <div className={`preview-step ${activeStep >= 1 ? 'preview-step-active' : ''}`}>
-                <span>02</span>
-                <strong>{t('homePreviewStepDebate')}</strong>
-              </div>
-              <div className={`preview-step ${activeStep >= 2 ? 'preview-step-active' : ''}`}>
-                <span>03</span>
-                <strong>{t('homePreviewStepBrief')}</strong>
-              </div>
+        <div className="local-lists">
+          <section className="local-list">
+            <div className="local-list-header">
+              <strong>Watchlist</strong>
+              <button
+                type="button"
+                onClick={() => onAddToWatchlist(symbol)}
+                disabled={!symbol.trim()}
+                aria-label="Add current symbol to watchlist"
+                title="Add current symbol to watchlist"
+              >
+                Add to watchlist
+              </button>
             </div>
-          </div>
-
-          <div className="preview-section">
-            <span className="preview-kicker">{t('homePreviewEvidence')}</span>
-            <div className="preview-pill-row">
-              <span className="preview-pill">{t('homePreviewMetricDecision')}</span>
-              <span className="preview-pill">{t('homePreviewMetricRisk')}</span>
-              <span className="preview-pill">{t('homeFeatureDebate')}</span>
-              <span className="preview-pill">{t('homeFeatureSources')}</span>
+            <div className="local-chip-row">
+              {watchlist.map((ticker) => (
+                <span className="local-chip" key={ticker}>
+                  <button type="button" onClick={() => onTickerSelect(ticker)} disabled={isLoading}>
+                    {ticker}
+                  </button>
+                  <button type="button" aria-label={`Remove ${ticker}`} onClick={() => onRemoveFromWatchlist(ticker)}>
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
-          </div>
+          </section>
 
-          <div className="preview-section">
-            <span className="preview-kicker">{t('homePreviewAppendix')}</span>
-            <div className="preview-list">
-              <div className="preview-list-row">
-                <span>{t('secondaryDebate')}</span>
-                <div className="preview-line" />
-              </div>
-              <div className="preview-list-row">
-                <span>{t('newsTitle')}</span>
-                <div className="preview-line" />
-              </div>
-              <div className="preview-list-row">
-                <span>{t('sourceQualityTitle')}</span>
-                <div className="preview-line preview-line-short" />
-              </div>
+          <section className="local-list">
+            <div className="local-list-header">
+              <strong>Recent</strong>
+              <button type="button" onClick={() => onLoadDemo()}>
+                Demo
+              </button>
             </div>
-          </div>
+            <div className="recent-list">
+              {history.length === 0 && <span className="local-empty">No saved runs yet</span>}
+              {history.map((item) => (
+                <button type="button" key={item.id} className="recent-item" onClick={() => onTickerSelect(item.symbol)}>
+                  <span>{item.symbol}</span>
+                  <small>
+                    {item.action}
+                    {item.confidence !== null ? ` · ${Math.round(item.confidence * 100)}%` : ''}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
-        <div className="preview-reason">{t('homePreviewReason')}</div>
+
+        <LiveMonitor watchlist={watchlist} onTickerSelect={onTickerSelect} />
       </div>
     </section>
   );

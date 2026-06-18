@@ -27,11 +27,48 @@ import {
 } from './components';
 
 type AppMode = 'single' | 'compare';
+type SavedAnalysis = {
+  id: string;
+  symbol: string;
+  action: string;
+  confidence: number | null;
+};
+
+const HISTORY_KEY = 'marketmind.history';
+const WATCHLIST_KEY = 'marketmind.watchlist';
+const DEFAULT_WATCHLIST = ['NVDA', 'QQQ', 'SPY', 'AMD'];
+const WATCHLIST_ALIASES: Record<string, string> = {
+  NASDAQ: 'QQQ',
+  'S&P 500': 'SPY',
+  SP500: 'SPY',
+};
+
+function readJson<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveJson<T>(key: string, value: T) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function readWatchlist() {
+  const saved = readJson<string[]>(WATCHLIST_KEY, DEFAULT_WATCHLIST);
+  const next = [...new Set(saved.map((item) => WATCHLIST_ALIASES[item.toUpperCase()] ?? item.toUpperCase()))];
+  saveJson(WATCHLIST_KEY, next);
+  return next;
+}
 
 export default function App() {
   const [symbol, setSymbol] = useState('');
   const [lang, setLang] = useState<Language>(getLanguage());
   const [appMode, setAppMode] = useState<AppMode>('single');
+  const [history, setHistory] = useState<SavedAnalysis[]>(() => readJson(HISTORY_KEY, []));
+  const [watchlist, setWatchlist] = useState<string[]>(readWatchlist);
   const { result, error, isLoading, completedAgents, trace, startAnalysis, loadDemo, retry } = useAnalysis();
 
   useEffect(() => {
@@ -58,6 +95,39 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     startAnalysis(ticker, lang);
   }, [lang, startAnalysis]);
+
+  const addToWatchlist = useCallback((ticker: string) => {
+    const nextTicker = ticker.trim().toUpperCase();
+    if (!nextTicker) return;
+    setWatchlist((current) => {
+      const next = [nextTicker, ...current.filter((item) => item !== nextTicker)].slice(0, 12);
+      saveJson(WATCHLIST_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const removeFromWatchlist = useCallback((ticker: string) => {
+    setWatchlist((current) => {
+      const next = current.filter((item) => item !== ticker);
+      saveJson(WATCHLIST_KEY, next);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!result || (result.status !== 'complete' && result.status !== 'partial')) return;
+    setHistory((current) => {
+      const item: SavedAnalysis = {
+        id: result.id,
+        symbol: result.symbol,
+        action: result.cio_decision?.action ?? result.status.toUpperCase(),
+        confidence: result.cio_decision?.confidence ?? null,
+      };
+      const next = [item, ...current.filter((entry) => entry.id !== result.id)].slice(0, 8);
+      saveJson(HISTORY_KEY, next);
+      return next;
+    });
+  }, [result]);
 
   const missingThaiFields = result ? countMissingThaiFields(result) : 0;
   const hasResult = isLoading || Boolean(result) || Boolean(error);
@@ -178,6 +248,10 @@ export default function App() {
                 onTickerSelect={handleTickerSelect}
                 onModeChange={setAppMode}
                 onLoadDemo={loadDemo}
+                history={history}
+                watchlist={watchlist}
+                onAddToWatchlist={addToWatchlist}
+                onRemoveFromWatchlist={removeFromWatchlist}
               />
             )}
 

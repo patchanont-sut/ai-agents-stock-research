@@ -44,6 +44,32 @@ export const api = {
   getDemoAnalysis: () =>
     request<import('../types').AnalysisResult>('/demo/analysis'),
 
+  // ── Live Monitor Endpoints ──
+
+  // Get current stock price
+  getPrice: (symbol: string) =>
+    request<{
+      symbol: string;
+      price: number | null;
+      change: number | null;
+      change_percent: number | null;
+      source?: string;
+      error?: string;
+    }>(`/price/${symbol}`),
+
+  // Get recent news articles for a stock
+  getNews: (symbol: string, limit: number = 5) =>
+    request<{
+      symbol: string;
+      articles: {
+        title: string;
+        url: string;
+        source?: string;
+        datetime?: string;
+      }[];
+      source?: string;
+    }>(`/news/${symbol}?limit=${limit}`),
+
   // ── Comparison Endpoints ──
 
   // Start a multi-stock comparison
