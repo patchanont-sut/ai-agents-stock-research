@@ -1,0 +1,147 @@
+<style>
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+.seg-btn{flex:1;padding:10px;border:none;background:transparent;border-radius:var(--border-radius-md);font-size:14px;color:var(--color-text-secondary);cursor:pointer;}
+.seg-active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;}
+.toggle-track{position:absolute;inset:0;background:var(--color-background-tertiary);border-radius:999px;transition:background .15s;}
+.toggle-track::after{content:'';position:absolute;width:20px;height:20px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .15s;}
+input:checked + .toggle-track{background:var(--color-text-info);}
+input:checked + .toggle-track::after{transform:translateX(18px);}
+.row-hover:hover{background:var(--color-background-secondary);}
+</style>
+
+<h2 class="sr-only">หน้า dashboard ของ MarketMind AI ออกแบบใหม่สไตล์ Dime พร้อมช่องค้นหาหุ้น โหมดวิเคราะห์ วอชลิสต์ และสัญญาณล่าสุด</h2>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--color-background-info);display:flex;align-items:center;justify-content:center;font-weight:500;font-size:14px;color:var(--color-text-info);">M</div>
+    <div>
+      <p style="margin:0;font-weight:500;font-size:15px;">MarketMind AI</p>
+      <p style="margin:0;font-size:12px;color:var(--color-text-tertiary);">Research console</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button aria-label="สลับธีมมืด/สว่าง" style="width:36px;height:36px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="ti ti-moon" style="font-size:18px;" aria-hidden="true"></i></button>
+    <button style="border-radius:var(--border-radius-md);padding:8px 14px;font-size:13px;">TH</button>
+  </div>
+</div>
+
+<h1 style="margin:0 0 6px;">หุ้นไหนที่คุณอยากรู้วันนี้</h1>
+<p style="margin:0 0 1.25rem;font-size:14px;color:var(--color-text-secondary);line-height:1.6;">ป้อนสัญลักษณ์หุ้น แล้วรับคำตัดสินใจ bull/bear ความเสี่ยง มูลค่า และคุณภาพแหล่งข้อมูลในหน้าเดียว</p>
+
+<div style="display:flex;gap:4px;background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:4px;margin-bottom:1.25rem;">
+  <button class="seg-btn seg-active"><i class="ti ti-target" style="font-size:15px;margin-right:6px;vertical-align:-2px;" aria-hidden="true"></i>วิเคราะห์เดี่ยว</button>
+  <button class="seg-btn"><i class="ti ti-arrows-left-right" style="font-size:15px;margin-right:6px;vertical-align:-2px;" aria-hidden="true"></i>เปรียบเทียบหุ้น</button>
+</div>
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;margin-bottom:1rem;">
+  <p style="margin:0 0 10px;font-size:13px;color:var(--color-text-secondary);">เริ่มจากสัญลักษณ์หุ้น</p>
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <div style="flex:1;position:relative;">
+      <i class="ti ti-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--color-text-tertiary);" aria-hidden="true"></i>
+      <input type="text" placeholder="ป้อนสัญลักษณ์หุ้น (เช่น AAPL, TSLA)..." style="width:100%;padding-left:36px;">
+    </div>
+    <button style="background:var(--color-text-info);color:var(--color-background-primary);border:none;padding:0 20px;border-radius:var(--border-radius-md);font-size:14px;font-weight:500;white-space:nowrap;">วิเคราะห์</button>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span style="padding:6px 14px;border-radius:999px;background:var(--color-background-secondary);font-size:13px;">AAPL</span>
+    <span style="padding:6px 14px;border-radius:999px;background:var(--color-background-secondary);font-size:13px;">MSFT</span>
+    <span style="padding:6px 14px;border-radius:999px;background:var(--color-background-secondary);font-size:13px;">NVDA</span>
+    <span style="padding:6px 14px;border-radius:999px;background:var(--color-background-secondary);font-size:13px;">TSLA</span>
+    <span style="padding:6px 14px;border-radius:999px;background:var(--color-background-secondary);font-size:13px;">AMD</span>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:12px;">
+
+  <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <p style="margin:0;font-weight:500;font-size:14px;">Watchlist</p>
+      <button aria-label="เพิ่มในวอชลิสต์" style="width:28px;height:28px;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;"><i class="ti ti-plus" style="font-size:15px;" aria-hidden="true"></i></button>
+    </div>
+    <div class="row-hover" style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-radius:var(--border-radius-md);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--color-background-info);color:var(--color-text-info);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;">SP</div>
+        <span style="font-size:14px;">SPY</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;color:var(--color-text-success);">+0.8%</span>
+        <i class="ti ti-x" style="font-size:14px;color:var(--color-text-tertiary);cursor:pointer;" aria-hidden="true"></i>
+      </div>
+    </div>
+    <div class="row-hover" style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-radius:var(--border-radius-md);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--color-background-info);color:var(--color-text-info);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;">NV</div>
+        <span style="font-size:14px;">NVDA</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;color:var(--color-text-success);">+2.1%</span>
+        <i class="ti ti-x" style="font-size:14px;color:var(--color-text-tertiary);cursor:pointer;" aria-hidden="true"></i>
+      </div>
+    </div>
+    <div class="row-hover" style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-radius:var(--border-radius-md);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--color-background-info);color:var(--color-text-info);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;">QQ</div>
+        <span style="font-size:14px;">QQQ</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;color:var(--color-text-danger);">-0.3%</span>
+        <i class="ti ti-x" style="font-size:14px;color:var(--color-text-tertiary);cursor:pointer;" aria-hidden="true"></i>
+      </div>
+    </div>
+    <div class="row-hover" style="display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-radius:var(--border-radius-md);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--color-background-info);color:var(--color-text-info);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;">AM</div>
+        <span style="font-size:14px;">AMD</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:13px;color:var(--color-text-success);">+1.4%</span>
+        <i class="ti ti-x" style="font-size:14px;color:var(--color-text-tertiary);cursor:pointer;" aria-hidden="true"></i>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <p style="margin:0;font-weight:500;font-size:14px;">Recent</p>
+      <span style="font-size:12px;padding:3px 10px;border-radius:999px;background:var(--color-background-secondary);color:var(--color-text-tertiary);">Demo</span>
+    </div>
+    <div class="row-hover" style="display:flex;align-items:center;justify-content:space-between;padding:10px 6px;border-radius:var(--border-radius-md);">
+      <span style="font-size:14px;font-weight:500;">AAPL</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;padding:3px 10px;border-radius:999px;background:var(--color-background-success);color:var(--color-text-success);font-weight:500;">BUY</span>
+        <span style="font-size:14px;font-weight:500;">85%</span>
+      </div>
+    </div>
+    <div class="row-hover" style="display:flex;align-items:center;justify-content:space-between;padding:10px 6px;border-radius:var(--border-radius-md);">
+      <span style="font-size:14px;font-weight:500;">S&amp;P 500</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;padding:3px 10px;border-radius:999px;background:var(--color-background-warning);color:var(--color-text-warning);font-weight:500;">HOLD</span>
+        <span style="font-size:14px;font-weight:500;">60%</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="width:36px;height:36px;border-radius:var(--border-radius-md);background:var(--color-background-secondary);display:flex;align-items:center;justify-content:center;"><i class="ti ti-activity" style="font-size:17px;color:var(--color-text-secondary);" aria-hidden="true"></i></div>
+    <div>
+      <p style="margin:0;font-weight:500;font-size:14px;">Live monitor</p>
+      <p style="margin:0;font-size:12px;color:var(--color-text-tertiary);">รับการแจ้งเตือนเมื่อสัญญาณหุ้นในวอชลิสต์เปลี่ยน</p>
+    </div>
+  </div>
+  <label style="position:relative;display:inline-block;width:44px;height:26px;flex-shrink:0;">
+    <input type="checkbox" style="opacity:0;width:0;height:0;">
+    <span class="toggle-track"></span>
+  </label>
+</div>
+
+<script>
+document.querySelectorAll('.seg-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('seg-active'); });
+    btn.classList.add('seg-active');
+  });
+});
+</script>
