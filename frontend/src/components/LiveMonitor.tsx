@@ -113,12 +113,16 @@ export function LiveMonitor({ watchlist, onTickerSelect }: LiveMonitorProps) {
 
   return (
     <div className="live-monitor">
-      <div className="local-list-header">
-        <strong>Live Monitor</strong>
-        <button type="button" onClick={() => setActive((value) => !value)}>
-          {active ? 'Stop' : 'Start monitor'}
-        </button>
-      </div>
+        <div className="local-list-header">
+          <strong>Live Monitor</strong>
+          <button
+            type="button"
+            className="live-monitor-toggle"
+            onClick={() => setActive((value) => !value)}
+          >
+            {active ? 'Stop' : 'Start monitor'}
+          </button>
+        </div>
 
       {active && (
         <div className="live-monitor-grid">
@@ -141,7 +145,7 @@ export function LiveMonitor({ watchlist, onTickerSelect }: LiveMonitorProps) {
                 <div className="live-monitor-meta">
                   {hasPrice && (
                     <span className="live-monitor-quote">
-                      <span className="live-monitor-price">${item.price.toFixed(2)}</span>
+                      <span className="live-monitor-price">${item.price?.toFixed(2) ?? '-'}</span>
                       {item.changePercent !== null && (
                         <span className={`live-monitor-change ${item.changePercent >= 0 ? 'change-up' : 'change-down'}`}>
                           {item.changePercent >= 0 ? '+' : ''}{item.changePercent.toFixed(2)}%
@@ -152,13 +156,6 @@ export function LiveMonitor({ watchlist, onTickerSelect }: LiveMonitorProps) {
                   {item?.hasNewNews && <span className="live-badge news-badge">New</span>}
                   {item?.hasBigMove && <span className="live-badge move-badge">Move</span>}
                   {item?.checkedAt && <span className="live-monitor-time">{item.checkedAt}</span>}
-                  <button
-                    type="button"
-                    className="live-monitor-analyze"
-                    onClick={() => onTickerSelect(symbol)}
-                  >
-                    Analyze
-                  </button>
                 </div>
               </div>
             );

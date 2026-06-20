@@ -2,31 +2,30 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { getLanguage, hasThaiText, setLanguage, Language, t } from './i18n';
 import { useAnalysis } from './hooks/useAnalysis';
-import {
-  LanguageToggle,
-  LoadingSpinner,
-  EmptyState,
-  ErrorDisplay,
-  ErrorBoundary,
-  BullBearPanel,
-  DebateViewer,
-  NewsFeed,
-  PipelineProgress,
-  SkeletonCard,
-  DecisionHero,
-  MetricsPanel,
-  ExecutiveSummary,
-  SourceQualityPanel,
-  AgentTracePanel,
-  ReliabilityPanel,
-  InvestmentMemoPanel,
-  EvidenceExplorer,
-  GroundingPanel,
-  EvaluationPanel,
-  ComparisonPanel,
-} from './components';
+import { LanguageToggle } from './components/LanguageToggle';
+import { LoadingSpinner } from './components/LoadingSpinner';
+import { EmptyState } from './components/EmptyState';
+import { ErrorDisplay } from './components/ErrorDisplay';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { BullBearPanel } from './components/BullBearPanel';
+import { DebateViewer } from './components/DebateViewer';
+import { NewsFeed } from './components/NewsFeed';
+import { PipelineProgress } from './components/PipelineProgress';
+import { SkeletonCard } from './components/SkeletonCard';
+import { DecisionHero } from './components/DecisionHero';
+import { MetricsPanel } from './components/MetricsPanel';
+import { ExecutiveSummary } from './components/ExecutiveSummary';
+import { SourceQualityPanel } from './components/SourceQualityPanel';
+import { AgentTracePanel } from './components/AgentTracePanel';
+import { ReliabilityPanel } from './components/ReliabilityPanel';
+import { InvestmentMemoPanel } from './components/InvestmentMemoPanel';
+import { EvidenceExplorer } from './components/EvidenceExplorer';
+import { GroundingPanel } from './components/GroundingPanel';
+import { EvaluationPanel } from './components/EvaluationPanel';
+import { ComparisonPanel } from './components/ComparisonPanel';
+import { LiveMonitor } from './components/LiveMonitor';
 
-type AppMode = 'single' | 'compare';
+type AppView = 'dashboard' | 'analysis' | 'watchlist' | 'reports' | 'compare';
 type SavedAnalysis = {
   id: string;
   symbol: string;
@@ -37,6 +36,13 @@ type SavedAnalysis = {
 const HISTORY_KEY = 'marketmind.history';
 const WATCHLIST_KEY = 'marketmind.watchlist';
 const DEFAULT_WATCHLIST = ['NVDA', 'QQQ', 'SPY', 'AMD'];
+const SIDEBAR_NAV: Array<{ id: Exclude<AppView, 'compare'>; label: string }> = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'analysis', label: 'Analysis' },
+  { id: 'watchlist', label: 'Watchlist' },
+  { id: 'reports', label: 'Reports' },
+];
+const TOPBAR_TABS = SIDEBAR_NAV;
 const WATCHLIST_ALIASES: Record<string, string> = {
   NASDAQ: 'QQQ',
   'S&P 500': 'SPY',
@@ -66,7 +72,7 @@ function readWatchlist() {
 export default function App() {
   const [symbol, setSymbol] = useState('');
   const [lang, setLang] = useState<Language>(getLanguage());
-  const [appMode, setAppMode] = useState<AppMode>('single');
+  const [activeView, setActiveView] = useState<AppView>('dashboard');
   const [history, setHistory] = useState<SavedAnalysis[]>(() => readJson(HISTORY_KEY, []));
   const [watchlist, setWatchlist] = useState<string[]>(readWatchlist);
   const { result, error, isLoading, completedAgents, trace, startAnalysis, loadDemo, retry } = useAnalysis();
@@ -82,19 +88,36 @@ export default function App() {
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (appMode !== 'single') return;
     const trimmed = symbol.trim().toUpperCase();
     if (trimmed) {
+      setActiveView('analysis');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       startAnalysis(trimmed, lang);
     }
-  }, [lang, symbol, startAnalysis, appMode]);
+  }, [lang, symbol, startAnalysis]);
 
   const handleTickerSelect = useCallback((ticker: string) => {
     setSymbol(ticker);
+    setActiveView('analysis');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     startAnalysis(ticker, lang);
   }, [lang, startAnalysis]);
+
+  const handleLoadDemo = useCallback(async () => {
+    setActiveView('analysis');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await loadDemo();
+  }, [loadDemo]);
+
+  const handleOpenCompare = useCallback(() => {
+    setActiveView('compare');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleViewChange = useCallback((view: AppView) => {
+    setActiveView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const addToWatchlist = useCallback((ticker: string) => {
     const nextTicker = ticker.trim().toUpperCase();
@@ -133,180 +156,344 @@ export default function App() {
   const hasResult = isLoading || Boolean(result) || Boolean(error);
   const hasCompleteResult = Boolean(result) && !isLoading && !error;
   const showHeaderSearch = hasResult;
-  const showHeaderModeSwitch = hasResult;
-
-  // Scroll-triggered visibility for section headings and cards
-  useEffect(() => {
-    if (!hasCompleteResult) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -30px 0px' }
-    );
-    const elements = document.querySelectorAll('.section-heading, .card');
-    elements.forEach((el) => observer.observe(el));
-    const timeout = setTimeout(() => {
-      elements.forEach((el) => el.classList.add('visible'));
-    }, 800);
-    return () => {
-      observer.disconnect();
-      clearTimeout(timeout);
-    };
-  }, [hasCompleteResult]);
+  const memoTitle = result?.investment_memo?.title ?? '';
+  const isSyntheticResult = memoTitle.includes('(Synthetic)') || result?.id === 'test';
 
   return (
-    <div className="app-container">
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-content app-container">
-          <a href="/" className="logo" aria-label="MarketMind AI home">
-            <span className="logo-mark">M</span>
-            <span className="logo-copy">
-              <span className="logo-title">{t('appTitle')}</span>
-              <span className="logo-subtitle">{t('appSubtitle')}</span>
-            </span>
-          </a>
-          <LanguageToggle lang={lang} onChange={handleLanguageChange} />
+    <div className="dashboard-shell">
+      <div className="bg-blob bg-blob-1" aria-hidden="true" />
+      <div className="bg-blob bg-blob-2" aria-hidden="true" />
 
-          {/* Mode switch — hidden on homescreen, shown when analysis active */}
-          {showHeaderModeSwitch && (
-            <div className="mode-switch">
+      <aside className="sidebar" aria-label="Main navigation">
+        <a className="sidebar-brand" href="/" aria-label={`${t('appTitle')} home`}>
+          <div className="sidebar-logo">M</div>
+          <div className="sidebar-title">{t('appTitle')}</div>
+          <div className="sidebar-subtitle">{t('appSubtitle')}</div>
+        </a>
+
+        <nav className="sidebar-nav" aria-label="Dashboard sections">
+          {SIDEBAR_NAV.map((item) => (
+            <button
+              key={item.id}
+              className={`sidebar-nav-item ${activeView === item.id ? 'active' : ''}`}
+              type="button"
+              onClick={() => handleViewChange(item.id)}
+            >
+              <span className="sidebar-nav-icon" aria-hidden="true">{item.label.slice(0, 1)}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeView === 'compare' ? 'active' : ''}`}
+            onClick={handleOpenCompare}
+          >
+            <span className="sidebar-nav-icon" aria-hidden="true">C</span>
+            <span>Compare</span>
+          </button>
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-upgrade-card sidebar-status">
+            <p>{t('homeEyebrow')}</p>
+            <button className="btn-secondary" onClick={() => void handleLoadDemo()} disabled={isLoading}>
+              {t('demoLoadBtn')}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div className="main-content">
+        <header className="topbar">
+          <div className="sidebar-title topbar-title">{t('appTitle')}</div>
+
+          <nav className="topbar-tabs" aria-label="Workspace views">
+            {TOPBAR_TABS.map((item) => (
               <button
-                className={`mode-btn ${appMode === 'single' ? 'active' : ''}`}
-                onClick={() => setAppMode('single')}
+                key={item.id}
+                className={`topbar-tab ${activeView === item.id ? 'active' : ''}`}
+                type="button"
+                onClick={() => handleViewChange(item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+            <button
+              className={`topbar-tab ${activeView === 'compare' ? 'active' : ''}`}
+              type="button"
+              onClick={handleOpenCompare}
+            >
+              Compare
+            </button>
+          </nav>
+
+          <div className="topbar-actions">
+            {activeView !== 'compare' && showHeaderSearch && (
+              <form className="topbar-search" onSubmit={handleSubmit}>
+                <input
+                  type="text"
+                  className="topbar-search-input"
+                  placeholder={t('searchPlaceholder')}
+                  value={symbol}
+                  onChange={(e) => setSymbol(e.target.value)}
+                  disabled={isLoading}
+                  autoFocus
+                />
+                <button type="submit" className="topbar-search-btn" disabled={isLoading || !symbol.trim()}>
+                  {isLoading ? t('analyzingBtn') : t('analyzeBtn')}
+                </button>
+              </form>
+            )}
+
+            <div className="app-mode-switch" role="tablist" aria-label="Analysis mode">
+              <button
+                className={`mode-btn ${activeView !== 'compare' ? 'active' : ''}`}
+                onClick={() => handleViewChange('analysis')}
+                type="button"
               >
                 {t('singleMode')}
               </button>
               <button
-                className={`mode-btn ${appMode === 'compare' ? 'active' : ''}`}
-                onClick={() => setAppMode('compare')}
+                className={`mode-btn ${activeView === 'compare' ? 'active' : ''}`}
+                onClick={handleOpenCompare}
+                type="button"
               >
                 {t('compareMode')}
               </button>
             </div>
+
+            <LanguageToggle lang={lang} onChange={handleLanguageChange} />
+          </div>
+        </header>
+
+        <main className="app-content">
+          <ErrorBoundary>
+          {activeView === 'compare' && (
+            <ComparisonPanel lang={lang} />
           )}
 
-          {appMode === 'single' && showHeaderSearch && (
-            <form className="search-container" onSubmit={handleSubmit}>
-              <input
-                type="text"
-                className="search-input"
-                placeholder={t('searchPlaceholder')}
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                disabled={isLoading}
-                autoFocus
-              />
-              <button type="submit" className="search-btn" disabled={isLoading || !symbol.trim()}>
-                {isLoading ? t('analyzingBtn') : t('analyzeBtn')}
-              </button>
-            </form>
-          )}
-        </div>
-      </header>
+          {activeView !== 'compare' && (
+            <>
+              {error && <ErrorDisplay message={error} onRetry={() => retry(symbol, lang)} />}
 
-      {/* Dashboard Content */}
-      <main className={`dashboard ${hasCompleteResult ? 'has-result' : ''}`}>
-        <ErrorBoundary>
-        {/* Compare Mode */}
-        {appMode === 'compare' && (
-          <ComparisonPanel lang={lang} />
-        )}
-
-        {/* Single Analysis Mode */}
-        {appMode === 'single' && (
-          <>
-            {error && <ErrorDisplay message={error} onRetry={() => retry(symbol, lang)} />}
-
-            {/* Loading state */}
-            {isLoading && !error && (
-              <>
-                <LoadingSpinner message={t('loadingMessage', { symbol })} />
-                <PipelineProgress completedAgents={completedAgents} />
-                <div className="brief-loading-stack">
-                  <SkeletonCard lines={5} height="300px" />
-                  <SkeletonCard lines={4} height="180px" />
-                  <div className="dashboard-row dashboard-row-2">
-                    <SkeletonCard height="210px" />
-                    <SkeletonCard height="210px" />
+              {activeView === 'analysis' && isLoading && !error && (
+                <div className="dashboard has-result">
+                  <LoadingSpinner message={t('loadingMessage', { symbol })} />
+                  <PipelineProgress completedAgents={completedAgents} />
+                  <div className="brief-loading-stack">
+                    <SkeletonCard lines={5} height="300px" />
+                    <SkeletonCard lines={4} height="180px" />
+                    <div className="dashboard-row dashboard-row-2">
+                      <SkeletonCard height="210px" />
+                      <SkeletonCard height="210px" />
+                    </div>
                   </div>
                 </div>
-              </>
-            )}
+              )}
 
-            {!isLoading && !error && !result && (
-              <EmptyState
-                symbol={symbol}
-                isLoading={isLoading}
-                onSymbolChange={setSymbol}
-                onSubmit={handleSubmit}
-                onTickerSelect={handleTickerSelect}
-                onModeChange={setAppMode}
-                onLoadDemo={loadDemo}
-                history={history}
-                watchlist={watchlist}
-                onAddToWatchlist={addToWatchlist}
-                onRemoveFromWatchlist={removeFromWatchlist}
-              />
-            )}
+              {activeView === 'dashboard' && !isLoading && !error && (
+                <EmptyState
+                  symbol={symbol}
+                  isLoading={isLoading}
+                  onSymbolChange={setSymbol}
+                  onSubmit={handleSubmit}
+                  onTickerSelect={handleTickerSelect}
+                  onLoadDemo={handleLoadDemo}
+                  history={history}
+                  watchlist={watchlist}
+                  onAddToWatchlist={addToWatchlist}
+                  onRemoveFromWatchlist={removeFromWatchlist}
+                />
+              )}
 
-            {result && (result.status === 'complete' || result.status === 'partial') && (
-              <>
-                <section className="brief-section brief-section-hero" aria-label={t('decisionHeroTitle')}>
-                  <DecisionHero result={result} lang={lang} missingThaiFields={missingThaiFields} />
-                  <ExecutiveSummary result={result} />
-                </section>
+              {activeView === 'analysis' && !isLoading && !error && !result && (
+                <EmptyState
+                  symbol={symbol}
+                  isLoading={isLoading}
+                  onSymbolChange={setSymbol}
+                  onSubmit={handleSubmit}
+                  onTickerSelect={handleTickerSelect}
+                  onLoadDemo={handleLoadDemo}
+                  history={history}
+                  watchlist={watchlist}
+                  onAddToWatchlist={addToWatchlist}
+                  onRemoveFromWatchlist={removeFromWatchlist}
+                />
+              )}
 
-                <section className="brief-section brief-section-evidence" aria-labelledby="evidence-heading">
+              {activeView === 'watchlist' && (
+                <section className="dashboard has-result" aria-label="Watchlist management">
                   <div className="section-heading">
-                    <span className="section-eyebrow">02</span>
-                    <h2 id="evidence-heading">{t('evidenceSection')}</h2>
+                    <span className="section-eyebrow">01</span>
+                    <h2>Watchlist</h2>
                   </div>
-                  <MetricsPanel result={result} lang={lang} />
-                  <BullBearPanel result={result} />
-                </section>
-
-                <section className="brief-section brief-section-appendix" aria-labelledby="appendix-heading">
-                  <div className="section-heading section-heading-muted">
-                    <span className="section-eyebrow">03</span>
-                    <h2 id="appendix-heading">{t('appendixSection')}</h2>
-                  </div>
-                  <DebateViewer result={result} lang={lang} />
-                  <SourceQualityPanel result={result} />
-                  <ReliabilityPanel evidenceQuality={result.evidence_quality} />
-                  <EvaluationPanel analysisId={result.id} />
-                  <InvestmentMemoPanel
-                    memo={result.investment_memo}
-                    evidenceLibrary={result.evidence_library}
-                    analysisId={result.id}
-                  />
-                  <GroundingPanel groundingReport={result.investment_memo?.grounding_report} />
-                  <EvidenceExplorer evidenceLibrary={result.evidence_library} />
-                  <AgentTracePanel trace={trace} />
-                  <NewsFeed result={result} />
-
-                  {result.errors.length > 0 && (
-                    <div className="card card-warnings">
-                      <div className="card-title">{t('warningsTitle')}</div>
-                      <ul className="warnings-list">
-                        {result.errors.map((err, i) => (
-                          <li key={i}>{err}</li>
-                        ))}
-                      </ul>
+                  <div className="home-sidebar">
+                    <div className="home-sidebar-card">
+                      <div className="home-sidebar-card-header">
+                        <span>Tracked symbols</span>
+                        <button className="card-action" onClick={() => void handleLoadDemo()} type="button">
+                          Demo
+                        </button>
+                      </div>
+                      {watchlist.map((ticker) => (
+                        <div key={ticker} className="watchlist-item" onClick={() => handleTickerSelect(ticker)}>
+                          <div className="watchlist-item-left">
+                            <div className="watchlist-ticker-box">{ticker}</div>
+                          </div>
+                          <div className="watchlist-item-action">
+                            <button
+                              className="watchlist-remove"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeFromWatchlist(ticker);
+                              }}
+                              aria-label={`Remove ${ticker}`}
+                              title={`Remove ${ticker}`}
+                              type="button"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                    <div className="home-sidebar-card">
+                      <LiveMonitor watchlist={watchlist} onTickerSelect={handleTickerSelect} />
+                    </div>
+                  </div>
                 </section>
-              </>
-            )}
-          </>
-        )}
-        </ErrorBoundary>
-      </main>
+              )}
+
+              {activeView === 'reports' && (
+                <section className="dashboard has-result" aria-label="Recent reports">
+                  <div className="section-heading">
+                    <span className="section-eyebrow">01</span>
+                    <h2>Reports</h2>
+                  </div>
+                  <div className="home-sidebar-card">
+                    <div className="home-sidebar-card-header">
+                      <span>Recent Activity</span>
+                      <button className="card-action" onClick={() => handleViewChange('analysis')} type="button">
+                        New analysis
+                      </button>
+                    </div>
+                    <div className="recent-list">
+                      {history.length === 0 && <div className="local-empty">No saved runs yet</div>}
+                      {history.map((item) => (
+                        <button type="button" key={item.id} className="recent-item" onClick={() => handleTickerSelect(item.symbol)}>
+                          <span>{item.symbol}</span>
+                          <small>
+                            {item.action}
+                            {item.confidence !== null ? ` · ${Math.round(item.confidence * 100)}%` : ''}
+                          </small>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {activeView === 'analysis' && result && (result.status === 'complete' || result.status === 'partial') && (
+                <div className={`dashboard ${hasCompleteResult ? 'has-result' : ''}`}>
+                  <div className="analysis-grid">
+                    <div className="analysis-main">
+                      <section className="brief-section brief-section-hero" aria-label={t('decisionHeroTitle')}>
+                        <DecisionHero result={result} lang={lang} missingThaiFields={missingThaiFields} />
+                        <ExecutiveSummary result={result} />
+                      </section>
+
+                      <section className="brief-section brief-section-evidence" aria-labelledby="evidence-heading">
+                        <div className="section-heading">
+                          <span className="section-eyebrow">02</span>
+                          <h2 id="evidence-heading">{t('evidenceSection')}</h2>
+                        </div>
+                        <MetricsPanel result={result} lang={lang} />
+                        <BullBearPanel result={result} />
+                      </section>
+
+                      <section className="brief-section brief-section-appendix" aria-labelledby="appendix-heading">
+                        <div className="section-heading section-heading-muted">
+                          <span className="section-eyebrow">03</span>
+                          <h2 id="appendix-heading">{t('appendixSection')}</h2>
+                        </div>
+                        <DebateViewer result={result} lang={lang} />
+                        <SourceQualityPanel result={result} />
+                        <ReliabilityPanel evidenceQuality={result.evidence_quality} />
+                        {!isSyntheticResult && <EvaluationPanel analysisId={result.id} />}
+                        <InvestmentMemoPanel
+                          memo={result.investment_memo}
+                          evidenceLibrary={result.evidence_library}
+                          analysisId={result.id}
+                        />
+                        <GroundingPanel groundingReport={result.investment_memo?.grounding_report} />
+                        <EvidenceExplorer evidenceLibrary={result.evidence_library} />
+                        <AgentTracePanel trace={trace} />
+                        <NewsFeed result={result} />
+
+                        {result.errors.length > 0 && (
+                          <div className="card card-warnings">
+                            <div className="card-title">{t('warningsTitle')}</div>
+                            <ul className="warnings-list">
+                              {result.errors.map((err, i) => (
+                                <li key={i}>{err}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </section>
+                    </div>
+
+                    <aside className="analysis-rail" aria-label="Market sidebar">
+                      <div className="rail-card rail-card-quote">
+                        <span className="rail-kicker">Active Brief</span>
+                        <strong>{result.symbol}</strong>
+                        <small>{result.cio_decision?.action ?? result.status}</small>
+                      </div>
+                      <div className="rail-card">
+                        <div className="home-sidebar-card-header">
+                          <span>Watchlist</span>
+                          <button
+                            className="card-action"
+                            onClick={() => addToWatchlist(result.symbol)}
+                            type="button"
+                          >
+                            Track
+                          </button>
+                        </div>
+                        {watchlist.map((ticker) => (
+                          <button key={ticker} className="rail-list-row" type="button" onClick={() => handleTickerSelect(ticker)}>
+                            <span>{ticker}</span>
+                            <small>Open</small>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rail-card">
+                        <div className="home-sidebar-card-header">
+                          <span>Recent Activity</span>
+                          <button className="card-action" onClick={() => void handleLoadDemo()} type="button">
+                            Demo
+                          </button>
+                        </div>
+                        {history.length === 0 && <div className="local-empty">No saved runs yet</div>}
+                        {history.map((item) => (
+                          <button key={item.id} className="rail-list-row" type="button" onClick={() => handleTickerSelect(item.symbol)}>
+                            <span>{item.symbol}</span>
+                            <small>{item.action}{item.confidence !== null ? ` · ${Math.round(item.confidence * 100)}%` : ''}</small>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rail-card">
+                        <LiveMonitor watchlist={watchlist} onTickerSelect={handleTickerSelect} />
+                      </div>
+                    </aside>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          </ErrorBoundary>
+        </main>
+      </div>
     </div>
   );
 }

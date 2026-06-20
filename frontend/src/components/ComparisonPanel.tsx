@@ -1,4 +1,4 @@
-// MarketMind AI Dashboard — Stock Comparison Panel
+// MarketMind AI Dashboard — Stock Comparison Panel (Redesigned)
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { t } from '../i18n';
 import { api } from '../api/client';
@@ -9,7 +9,7 @@ interface Props {
 }
 
 function SummaryCard({ summary, isWinner }: { summary: CompareStockSummary; isWinner: boolean }) {
-  const actionClass = summary.cio_action === 'BUY' ? 'action-buy' : summary.cio_action === 'SELL' ? 'action-sell' : 'action-hold';
+  const actionClass = summary.cio_action === 'BUY' ? 'action-BUY' : summary.cio_action === 'SELL' ? 'action-SELL' : 'action-HOLD';
   return (
     <div className={`compare-summary-card ${isWinner ? 'winner' : ''}`}>
       {isWinner && <div className="winner-badge">{t('winnerCard')}</div>}
@@ -347,13 +347,15 @@ export function ComparisonPanel({ lang }: Props) {
         <div className="card">
           <div className="card-title">{t('compareTimedOut')}</div>
           <p className="muted-text">{t('compareStillRunning')}</p>
-          <button className="search-btn compare-start-btn" onClick={handleCheckAgain}>
-            {t('compareCheckAgain')}
-          </button>
-          <button className="btn-back" onClick={handleReset} style={{ marginLeft: '0.5rem' }}>
-            ← {t('compareNewComparison')}
-          </button>
-          {error && <p className="error-text">{error}</p>}
+          <div className="compare-timeout-actions">
+            <button className="btn-primary compare-start-btn" onClick={handleCheckAgain}>
+              {t('compareCheckAgain')}
+            </button>
+            <button className="btn-back" onClick={handleReset}>
+              ← {t('compareNewComparison')}
+            </button>
+          </div>
+          {error && <p className="error-text compare-error-text">{error}</p>}
         </div>
       </div>
     );
@@ -363,7 +365,7 @@ export function ComparisonPanel({ lang }: Props) {
     <div className="compare-input-container animate-fade-in">
       <div className="card">
         <div className="card-title">{t('compareMode')}</div>
-        <p className="muted-text compare-intro-desc">{t('compareEmptyDesc')}</p>
+        <p className="compare-intro-desc">{t('compareEmptyDesc')}</p>
         <p className="compare-intro-hint">{t('compareEmptyHint')}</p>
 
         {/* Symbol chips */}
@@ -387,7 +389,7 @@ export function ComparisonPanel({ lang }: Props) {
         <div className="symbol-input-row">
           <input
             type="text"
-            className="search-input"
+            className="input-field"
             placeholder="AAPL, MSFT..."
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
@@ -397,7 +399,7 @@ export function ComparisonPanel({ lang }: Props) {
             aria-label={t('comparePlaceholder')}
           />
           <button
-            className="search-btn"
+            className="btn-primary btn-primary-sm"
             onClick={handleAddSymbol}
             disabled={loading || !inputValue.trim() || symbols.length >= 4}
           >
@@ -407,7 +409,7 @@ export function ComparisonPanel({ lang }: Props) {
 
         {/* Compare button */}
         <button
-          className="search-btn compare-start-btn"
+          className="btn-primary compare-start-btn"
           onClick={handleCompare}
           disabled={loading || symbols.length < 2}
         >
@@ -428,7 +430,7 @@ export function ComparisonPanel({ lang }: Props) {
           </div>
         )}
 
-        {error && <p className="error-text">{error}</p>}
+        {error && <p className="error-text compare-error-text">{error}</p>}
       </div>
 
       {loading && (

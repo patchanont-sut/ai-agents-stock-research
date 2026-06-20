@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
     validate_config()
     
     # Import tools to register them
-    import tools  # noqa: F401
+    from tools import macro_tools, market_tools, news_tools  # noqa: F401
     from core.tool_registry import tool_registry
     
     logger.info(f"Cache dir: {settings.CACHE_DIR}")

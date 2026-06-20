@@ -1,4 +1,4 @@
-// MarketMind AI Dashboard — Decision Hero
+// MarketMind AI Dashboard — Decision Hero (Redesigned Premium)
 // Full-width hero banner: stock identity + CIO decision + key points + status badges
 import { t, l } from '../i18n';
 import { Language } from '../i18n';
@@ -21,6 +21,7 @@ export function DecisionHero({ result, lang, missingThaiFields }: DecisionHeroPr
   if (!cio) {
     return (
       <div className="decision-hero decision-hero-missing">
+        <div className="hero-glow" aria-hidden="true" />
         <div className="hero-stock-row">
           <h1 className="hero-stock-name">{stockName}</h1>
           <span className="hero-stock-symbol">{result.symbol}</span>
@@ -45,6 +46,9 @@ export function DecisionHero({ result, lang, missingThaiFields }: DecisionHeroPr
 
   return (
     <div className={`decision-hero ${actionClass}`}>
+      {/* Glow accent */}
+      <div className="hero-glow" aria-hidden="true" />
+
       {/* Row 1: Stock identity */}
       <div className="hero-stock-row">
         <h1 className="hero-stock-name">{stockName}</h1>

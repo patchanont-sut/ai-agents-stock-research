@@ -266,6 +266,15 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Comparison progress
     compareProgressOf: "{done} of {total} symbols complete",
+    compareNoWinner: "No clear winner.",
+    compareNa: "N/A",
+    compareWarning: "Warning",
+    compareRemoveLabel: "Remove {symbol}",
+    compareStatusPending: "pending",
+    compareStatusRunning: "running",
+    compareStatusComplete: "complete",
+    compareStatusPartial: "partial",
+    compareStatusFailed: "failed",
 
     // Demo
     demoLoadBtn: "Load Demo",
@@ -528,6 +537,15 @@ const translations: Record<Language, Record<string, string>> = {
 
     // Comparison progress
     compareProgressOf: "เสร็จแล้ว {done} จาก {total} สัญลักษณ์",
+    compareNoWinner: "ยังไม่มีผู้ชนะที่ชัดเจน",
+    compareNa: "ไม่มีข้อมูล",
+    compareWarning: "คำเตือน",
+    compareRemoveLabel: "ลบ {symbol}",
+    compareStatusPending: "รอเริ่ม",
+    compareStatusRunning: "กำลังทำงาน",
+    compareStatusComplete: "เสร็จแล้ว",
+    compareStatusPartial: "บางส่วน",
+    compareStatusFailed: "ล้มเหลว",
 
     // Demo
     demoLoadBtn: "โหลดตัวอย่าง",

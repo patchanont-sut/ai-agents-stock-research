@@ -59,7 +59,15 @@ export function EvaluationPanel({ analysisId }: Props) {
         const result = await api.getEvaluation(analysisId);
         if (!cancelled) setMetrics(result);
       } catch (e) {
-        if (!cancelled) setError((e as Error).message);
+        if (!cancelled) {
+          const message = (e as Error).message;
+          if (message.includes('HTTP 404')) {
+            setMetrics(null);
+            setError(null);
+          } else {
+            setError(message);
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
