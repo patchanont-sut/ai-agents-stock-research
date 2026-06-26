@@ -24,6 +24,7 @@ import { GroundingPanel } from './components/GroundingPanel';
 import { EvaluationPanel } from './components/EvaluationPanel';
 import { ComparisonPanel } from './components/ComparisonPanel';
 import { LiveMonitor } from './components/LiveMonitor';
+import { ResearchWorkbench } from './components/ResearchWorkbench';
 
 type AppView = 'dashboard' | 'analysis' | 'watchlist' | 'reports' | 'compare';
 type SavedAnalysis = {
@@ -400,6 +401,12 @@ export default function App() {
                       <section className="brief-section brief-section-hero" aria-label={t('decisionHeroTitle')}>
                         <DecisionHero result={result} lang={lang} missingThaiFields={missingThaiFields} />
                         <ExecutiveSummary result={result} />
+                        <ResearchWorkbench
+                          result={result}
+                          trace={trace}
+                          completedAgents={completedAgents}
+                          lang={lang}
+                        />
                       </section>
 
                       <section className="brief-section brief-section-evidence" aria-labelledby="evidence-heading">

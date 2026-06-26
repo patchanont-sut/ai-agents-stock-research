@@ -117,7 +117,8 @@ export function EvidenceExplorer({ evidenceLibrary }: Props) {
                 rel="noopener noreferrer"
                 className="evidence-card-url"
               >
-                View source ↗
+                <span>{t('evidenceOpenSource')}</span>
+                <span aria-hidden="true">↗</span>
               </a>
             )}
             {ev.sentiment_score != null && (

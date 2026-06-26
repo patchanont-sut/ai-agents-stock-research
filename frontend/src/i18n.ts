@@ -78,6 +78,17 @@ const translations: Record<Language, Record<string, string>> = {
     statusBarStale: "Cached data",
     statusBarPartial: "Partial analysis",
     statusBarMissingThai: "Thai translations: {missing} section(s) incomplete",
+    workbenchTitle: "Research Workbench",
+    workbenchSubtitle: "The fastest read on decision quality, evidence support, and agent completion.",
+    workbenchDecision: "Decision Confidence",
+    workbenchSignals: "What drove the call",
+    workbenchBullSignal: "Bull signal",
+    workbenchBearSignal: "Bear signal",
+    workbenchRiskSignal: "Risk signal",
+    workbenchEvidence: "Evidence coverage",
+    workbenchCoverage: "Claim coverage",
+    workbenchClaimsCited: "{cited}/{total} claims cited",
+    workbenchPipeline: "Agent pipeline",
 
     // Metrics Panel
     metricSentiment: "Sentiment",
@@ -176,6 +187,7 @@ const translations: Record<Language, Record<string, string>> = {
     evidenceFilterAgent: "Agent",
     evidenceSearchPlaceholder: "Search evidence...",
     evidenceNoMatches: "No evidence matches your filters.",
+    evidenceOpenSource: "Open source",
 
     // Agent trace panel
     traceAgentResearch: "Research",
@@ -354,6 +366,17 @@ const translations: Record<Language, Record<string, string>> = {
     statusBarStale: "ข้อมูลแคช",
     statusBarPartial: "วิเคราะห์บางส่วน",
     statusBarMissingThai: "คำแปลภาษาไทย: ขาด {missing} ส่วน",
+    workbenchTitle: "Research Workbench",
+    workbenchSubtitle: "มุมมองที่อ่านเร็วที่สุดสำหรับคุณภาพคำตัดสิน หลักฐานรองรับ และความคืบหน้าของ agents",
+    workbenchDecision: "ความมั่นใจของคำตัดสิน",
+    workbenchSignals: "สัญญาณที่ขับเคลื่อนคำแนะนำ",
+    workbenchBullSignal: "สัญญาณฝั่งบวก",
+    workbenchBearSignal: "สัญญาณฝั่งลบ",
+    workbenchRiskSignal: "สัญญาณความเสี่ยง",
+    workbenchEvidence: "ความครอบคลุมของหลักฐาน",
+    workbenchCoverage: "ความครอบคลุมของข้อกล่าวอ้าง",
+    workbenchClaimsCited: "อ้างอิงแล้ว {cited}/{total} ข้อ",
+    workbenchPipeline: "ลำดับการทำงานของ agents",
 
     metricSentiment: "อารมณ์ตลาด",
     metricRisk: "ความเสี่ยง",
@@ -447,6 +470,7 @@ const translations: Record<Language, Record<string, string>> = {
     evidenceFilterAgent: "Agent",
     evidenceSearchPlaceholder: "ค้นหาหลักฐาน...",
     evidenceNoMatches: "ไม่พบหลักฐานที่ตรงกับตัวกรอง",
+    evidenceOpenSource: "เปิดแหล่งที่มา",
 
     // Agent trace panel
     traceAgentResearch: "วิจัยข้อมูล",
