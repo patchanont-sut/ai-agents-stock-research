@@ -236,7 +236,7 @@ Export any investment memo as a downloadable `.md` file with title, recommendati
 
 Supports **English** and **Thai**. Language toggle in header switches all UI text.
 
-## Portfolio Talking Points
+## Talking Points
 
 - **Multi-Agent Orchestration**: 9 specialized agents with shared memory and graceful error handling
 - **LLM Function Calling**: Agents invoke data retrieval tools via DeepSeek API
