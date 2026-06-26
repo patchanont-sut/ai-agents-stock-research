@@ -35,30 +35,23 @@ Write all free-text fields in English."""
     async def run(self, context: dict) -> RiskOutput:
         memory = context.get("memory")
         symbol = context.get("symbol", "Unknown")
-        trace_agent = context.get("trace_agent")
         logger.info(f"[RiskAgent] Assessing risk for {symbol}")
 
-        prompt_context = memory.get_prompt_context(exclude_current="risk_output")
         user_prompt = f"Assess the risk profile for {symbol} across macro, company, and volatility dimensions. Output English JSON."
-
         fallback = {"macro_risk": "Medium", "company_risk": "Medium", "volatility_risk": "Medium",
                      "macro_factors": [], "company_factors": [], "summary": ""}
-
-        try:
-            parsed = await self._call_json_llm(
-                user_prompt=user_prompt,
-                context=prompt_context,
-                fallback=fallback,
-                temperature=0.3,
-                max_tokens=1200,
-                thinking_enabled=False,
-                trace_agent=trace_agent,
-                llm_call_name="risk_json",
-            )
-        except Exception as e:
-            logger.error(f"[RiskAgent] Failed: {e}")
-            parsed = {"macro_risk": "Medium", "company_risk": "Medium", "volatility_risk": "Medium",
-                       "macro_factors": [], "company_factors": [], "summary": str(e)}
+        parsed = await self._call_context_json_llm(
+            context,
+            exclude_current="risk_output",
+            user_prompt=user_prompt,
+            fallback=fallback,
+            temperature=0.3,
+            max_tokens=1200,
+            llm_call_name="risk_json",
+            thinking_enabled=False,
+        )
+        if parsed.get("_error"):
+            parsed["summary"] = parsed["_error"]
 
         def to_risk_level(s: str) -> RiskLevel:
             s = s.lower()

@@ -33,6 +33,7 @@ function CitationChip({
   return (
     <span className="citation-chip-wrapper">
       <button
+        type="button"
         className={`citation-chip ${isUnknown ? 'citation-chip-unknown' : ''}`}
         onClick={() => setExpanded(!expanded)}
         title={isUnknown ? 'Unknown evidence ID' : (ev?.title || '')}
@@ -170,6 +171,7 @@ export function InvestmentMemoPanel({ memo, evidenceLibrary, analysisId }: Props
         )}
         {analysisId && (
           <button
+            type="button"
             className="export-btn"
             onClick={handleExport}
             disabled={exporting}

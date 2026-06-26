@@ -6,7 +6,7 @@ handles errors gracefully, and populates the AnalysisResult.
 from __future__ import annotations
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from .models import (
     AnalysisResult,
@@ -58,21 +58,30 @@ class Orchestrator:
             generated_at=self._started_at,
         )
 
+        from agents.bear_agent import BearAgent
+        from agents.bull_agent import BullAgent
+        from agents.cio_agent import CIOAgent
+        from agents.debate_agent import DebateAgent
+        from agents.research_agent import ResearchAgent
+        from agents.risk_agent import RiskAgent
+        from agents.sentiment_agent import SentimentAgent
+        from agents.valuation_agent import ValuationAgent
+
         agent_order = [
-            ("research", self._run_research),
-            ("sentiment", self._run_sentiment),
-            ("valuation", self._run_valuation),
-            ("bull", self._run_bull),
-            ("bear", self._run_bear),
-            ("risk", self._run_risk),
-            ("debate", self._run_debate),
-            ("cio", self._run_cio),
-            ("memo", self._run_memo),
+            ("research", ResearchAgent, "research"),
+            ("sentiment", SentimentAgent, "sentiment"),
+            ("valuation", ValuationAgent, "valuation"),
+            ("bull", BullAgent, "bull_case"),
+            ("bear", BearAgent, "bear_case"),
+            ("risk", RiskAgent, "risk"),
+            ("debate", DebateAgent, "debate"),
+            ("cio", CIOAgent, "cio_decision"),
+            ("memo", None, ""),
         ]
 
         has_partial_failure = False
 
-        for agent_name, agent_func in agent_order:
+        for agent_name, agent_cls, result_attr in agent_order:
             trace_entry = AgentTraceEntry(
                 agent_name=agent_name,
                 status="running",
@@ -82,7 +91,10 @@ class Orchestrator:
             _traces[self.session_id] = self._trace
 
             try:
-                await agent_func(result, trace_entry)
+                if agent_name == "memo":
+                    await self._run_memo(result, trace_entry)
+                else:
+                    await self._run_agent(agent_cls, result_attr, result, trace_entry)
                 trace_entry.status = "complete"
                 logger.info(f"[Orchestrator] ✓ {agent_name} completed for {self.symbol}")
             except Exception as e:
@@ -145,9 +157,14 @@ class Orchestrator:
 
         return result
 
-    async def _run_research(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.research_agent import ResearchAgent
-        agent = ResearchAgent()
+    async def _run_agent(
+        self,
+        agent_cls: type[Any],
+        result_attr: str,
+        result: AnalysisResult,
+        trace_entry: AgentTraceEntry,
+    ):
+        agent = agent_cls()
         try:
             output = await agent.run({
                 "memory": self.memory,
@@ -155,113 +172,9 @@ class Orchestrator:
                 "session_id": self.session_id,
                 "trace_agent": trace_entry,
             })
-            result.research = output
-            result.stock.symbol = self.symbol
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_sentiment(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.sentiment_agent import SentimentAgent
-        agent = SentimentAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.sentiment = output
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_valuation(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.valuation_agent import ValuationAgent
-        agent = ValuationAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.valuation = output
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_bull(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.bull_agent import BullAgent
-        agent = BullAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.bull_case = output
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_bear(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.bear_agent import BearAgent
-        agent = BearAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.bear_case = output
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_risk(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.risk_agent import RiskAgent
-        agent = RiskAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.risk = output
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_debate(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.debate_agent import DebateAgent
-        agent = DebateAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.debate = output
-            self._capture_summary(trace_entry, output)
-        finally:
-            await agent.close()
-
-    async def _run_cio(self, result: AnalysisResult, trace_entry: AgentTraceEntry):
-        from agents.cio_agent import CIOAgent
-        agent = CIOAgent()
-        try:
-            output = await agent.run({
-                "memory": self.memory,
-                "symbol": self.symbol,
-                "session_id": self.session_id,
-                "trace_agent": trace_entry,
-            })
-            result.cio_decision = output
+            setattr(result, result_attr, output)
+            if result_attr == "research":
+                result.stock.symbol = self.symbol
             self._capture_summary(trace_entry, output)
         finally:
             await agent.close()
@@ -359,6 +272,11 @@ class Orchestrator:
 _analysis_store: dict[str, AnalysisResult] = {}
 _analysis_progress: dict[str, list[str]] = {}
 _traces: dict[str, AnalysisTrace] = {}
+
+
+def seed_analysis_result(result: AnalysisResult) -> None:
+    """Store pending/running analysis state before the background task finishes."""
+    _analysis_store[result.id] = result
 
 
 async def run_full_pipeline(symbol: str, session_id: str, language: str = "en") -> None:

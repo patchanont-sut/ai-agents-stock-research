@@ -25,7 +25,13 @@ from core.models import (
     CompareStockSummary,
     EvaluationMetrics,
 )
-from core.orchestrator import run_full_pipeline, get_analysis_result, get_analysis_progress, get_analysis_trace
+from core.orchestrator import (
+    get_analysis_progress,
+    get_analysis_result,
+    get_analysis_trace,
+    run_full_pipeline,
+    seed_analysis_result,
+)
 from core.translation_service import ThaiTranslationService
 from core.comparison import rank_comparison, normalize_compare_symbols
 
@@ -35,10 +41,6 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-# ── In-memory analysis store (for tracking in-progress analyses) ──
-_pending_analyses: dict[str, AnalysisResult] = {}
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -105,10 +107,8 @@ async def start_analysis(request: AnalyzeRequest, background_tasks: BackgroundTa
         symbol=symbol,
         status=AnalysisStatus.PENDING,
     )
-    _pending_analyses[analysis_id] = pending
-
-    # Mark as running immediately
     pending.status = AnalysisStatus.RUNNING
+    seed_analysis_result(pending)
 
     # Fire background task for the full agent pipeline
     language = request.language or "en"
@@ -124,23 +124,12 @@ async def start_analysis(request: AnalyzeRequest, background_tasks: BackgroundTa
 @app.get("/api/analysis/{analysis_id}/status")
 async def get_analysis_status(analysis_id: str):
     """Get the current status of an analysis with agent progress."""
-    # Check completed results FIRST (orchestrator may have finished)
     result = get_analysis_result(analysis_id)
     if result:
         return {
             "analysis_id": analysis_id,
             "status": result.status.value,
             "symbol": result.symbol,
-            "completed_agents": get_analysis_progress(analysis_id),
-        }
-
-    # Check in-progress store
-    pending = _pending_analyses.get(analysis_id)
-    if pending:
-        return {
-            "analysis_id": analysis_id,
-            "status": pending.status.value,
-            "symbol": pending.symbol,
             "completed_agents": get_analysis_progress(analysis_id),
         }
 
@@ -153,20 +142,10 @@ async def get_analysis_result_endpoint(analysis_id: str):
     result = get_analysis_result(analysis_id)
     
     if not result:
-        # Check pending
-        pending = _pending_analyses.get(analysis_id)
-        if pending:
-            raise HTTPException(
-                status_code=202,
-                detail=f"Analysis still running (status: {pending.status.value}). Poll /api/analysis/{analysis_id}/status first.",
-            )
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    if result.status == AnalysisStatus.RUNNING:
+    if result.status in (AnalysisStatus.PENDING, AnalysisStatus.RUNNING):
         raise HTTPException(status_code=202, detail="Analysis still in progress")
-
-    # Clean up completed analysis from pending
-    _pending_analyses.pop(analysis_id, None)
 
     # The pipeline owns translation. Result fetch only validates coverage so
     # opening or toggling the UI never triggers another model call.
@@ -279,16 +258,9 @@ async def get_evidence_endpoint(analysis_id: str):
     result = get_analysis_result(analysis_id)
     
     if not result:
-        # Check pending
-        pending = _pending_analyses.get(analysis_id)
-        if pending:
-            raise HTTPException(
-                status_code=202,
-                detail=f"Analysis still running (status: {pending.status.value}). Poll /api/analysis/{analysis_id}/status first.",
-            )
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    if result.status == AnalysisStatus.RUNNING:
+    if result.status in (AnalysisStatus.PENDING, AnalysisStatus.RUNNING):
         raise HTTPException(status_code=202, detail="Analysis still in progress")
 
     return {
@@ -528,12 +500,9 @@ async def get_evaluation(analysis_id: str):
 
     result = get_analysis_result(analysis_id)
     if not result:
-        pending = _pending_analyses.get(analysis_id)
-        if pending:
-            raise HTTPException(status_code=202, detail="Analysis still in progress")
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    if result.status == AnalysisStatus.RUNNING:
+    if result.status in (AnalysisStatus.PENDING, AnalysisStatus.RUNNING):
         raise HTTPException(status_code=202, detail="Analysis still in progress")
 
     return evaluate_analysis(result)
@@ -562,6 +531,84 @@ async def get_comparison_evaluation(compare_id: str):
 
 # ── Memo Export Endpoint ──
 
+def render_memo_markdown(result: AnalysisResult) -> str:
+    memo = result.investment_memo
+    if not memo:
+        return ""
+
+    lines: list[str] = [
+        f"# {memo.title or f'Investment Research Memo: {result.symbol}'}",
+        "",
+        f"**Symbol:** {result.symbol}",
+        f"**Recommendation:** {memo.recommendation or 'N/A'}",
+        f"**Analysis ID:** {result.id}",
+        f"**Generated:** {result.generated_at or 'N/A'}",
+        "",
+    ]
+
+    if memo.executive_summary:
+        lines += ["## Executive Summary", "", memo.executive_summary, ""]
+
+    if memo.sections:
+        lines += ["## Analysis Sections", ""]
+        for section in memo.sections:
+            lines += [f"### {section.heading}", "", section.content, ""]
+            if section.citations:
+                lines.append("**Citations:**")
+                lines += [
+                    f"- [{cite.evidence_id}] {cite.quote_or_summary}"
+                    for cite in section.citations
+                ]
+                lines.append("")
+
+    if memo.key_citations:
+        lines += ["## Key Citations", ""]
+        lines += [
+            f"- **[{cite.evidence_id}]** {cite.quote_or_summary}"
+            for cite in memo.key_citations
+        ]
+        lines.append("")
+
+    if memo.grounding_report:
+        gr = memo.grounding_report
+        lines += [
+            "## Grounding Report Summary",
+            "",
+            f"- **Grounding Score:** {gr.grounded_score}",
+            f"- **Claims:** {gr.claim_count}",
+            f"- **Cited Claims:** {gr.cited_claim_count}",
+            f"- **Valid Citations:** {gr.valid_citation_count}",
+            f"- **Invalid Citations:** {gr.invalid_citation_count}",
+            "",
+        ]
+
+    if result.evidence_library:
+        lines += ["## Evidence Appendix", ""]
+        for item in result.evidence_library:
+            lines += [
+                f"### [{item.id}] {item.title}",
+                f"- **Source:** {item.source}",
+                f"- **Type:** {item.source_type}",
+            ]
+            if item.url:
+                lines.append(f"- **URL:** {item.url}")
+            if item.snippet:
+                lines.append(f"- **Snippet:** {item.snippet}")
+            lines += [f"  - {kp}" for kp in item.key_points]
+            lines.append("")
+
+    if result.errors:
+        lines += ["## Errors / Warnings", ""]
+        lines += [f"- {err}" for err in result.errors]
+        lines.append("")
+
+    lines += [
+        "---",
+        f"*Generated by MarketMind AI Dashboard on {datetime.now(timezone.utc).isoformat()}*",
+    ]
+    return "\n".join(lines)
+
+
 @app.get("/api/analysis/{analysis_id}/memo.md")
 async def get_memo_markdown(analysis_id: str):
     """Export the investment memo as a Markdown (.md) file."""
@@ -569,96 +616,17 @@ async def get_memo_markdown(analysis_id: str):
 
     result = get_analysis_result(analysis_id)
     if not result:
-        pending = _pending_analyses.get(analysis_id)
-        if pending:
-            raise HTTPException(status_code=202, detail="Analysis still in progress")
         raise HTTPException(status_code=404, detail="Analysis not found")
 
-    if result.status == AnalysisStatus.RUNNING:
+    if result.status in (AnalysisStatus.PENDING, AnalysisStatus.RUNNING):
         raise HTTPException(status_code=202, detail="Analysis still in progress")
 
     memo = result.investment_memo
     if not memo:
         raise HTTPException(status_code=404, detail="No investment memo available for this analysis")
 
-    # Build Markdown
-    lines: list[str] = []
-    lines.append(f"# {memo.title or f'Investment Research Memo: {result.symbol}'}")
-    lines.append("")
-    lines.append(f"**Symbol:** {result.symbol}")
-    lines.append(f"**Recommendation:** {memo.recommendation or 'N/A'}")
-    lines.append(f"**Analysis ID:** {result.id}")
-    lines.append(f"**Generated:** {result.generated_at or 'N/A'}")
-    lines.append("")
-
-    if memo.executive_summary:
-        lines.append("## Executive Summary")
-        lines.append("")
-        lines.append(memo.executive_summary)
-        lines.append("")
-
-    if memo.sections:
-        lines.append("## Analysis Sections")
-        lines.append("")
-        for section in memo.sections:
-            lines.append(f"### {section.heading}")
-            lines.append("")
-            lines.append(section.content)
-            lines.append("")
-            if section.citations:
-                lines.append("**Citations:**")
-                for cite in section.citations:
-                    lines.append(f"- [{cite.evidence_id}] {cite.quote_or_summary}")
-                lines.append("")
-
-    if memo.key_citations:
-        lines.append("## Key Citations")
-        lines.append("")
-        for cite in memo.key_citations:
-            lines.append(f"- **[{cite.evidence_id}]** {cite.quote_or_summary}")
-        lines.append("")
-
-    if memo.grounding_report:
-        gr = memo.grounding_report
-        lines.append("## Grounding Report Summary")
-        lines.append("")
-        lines.append(f"- **Grounding Score:** {gr.grounded_score}")
-        lines.append(f"- **Claims:** {gr.claim_count}")
-        lines.append(f"- **Cited Claims:** {gr.cited_claim_count}")
-        lines.append(f"- **Valid Citations:** {gr.valid_citation_count}")
-        lines.append(f"- **Invalid Citations:** {gr.invalid_citation_count}")
-        lines.append("")
-
-    if result.evidence_library:
-        lines.append("## Evidence Appendix")
-        lines.append("")
-        for item in result.evidence_library:
-            lines.append(f"### [{item.id}] {item.title}")
-            lines.append(f"- **Source:** {item.source}")
-            lines.append(f"- **Type:** {item.source_type}")
-            if item.url:
-                lines.append(f"- **URL:** {item.url}")
-            if item.snippet:
-                lines.append(f"- **Snippet:** {item.snippet}")
-            if item.key_points:
-                for kp in item.key_points:
-                    lines.append(f"  - {kp}")
-            lines.append("")
-
-    if result.errors:
-        lines.append("## Errors / Warnings")
-        lines.append("")
-        for err in result.errors:
-            lines.append(f"- {err}")
-        lines.append("")
-
-    lines.append("---")
-    lines.append(f"*Generated by MarketMind AI Dashboard on {datetime.now(timezone.utc).isoformat()}*")
-
-    markdown_content = "\n".join(lines)
-
     return PlainTextResponse(
-        content=markdown_content,
+        content=render_memo_markdown(result),
         media_type="text/markdown; charset=utf-8",
         headers={
             "Content-Disposition": f'attachment; filename="{result.symbol}_memo_{result.id[:8]}.md"',

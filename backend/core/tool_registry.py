@@ -4,7 +4,6 @@ Registers all tools that AI agents can call via function-calling.
 Supports OpenAI-compatible function-calling format for DeepSeek.
 """
 from __future__ import annotations
-import functools
 import inspect
 from typing import Callable, Any, Optional
 import json
@@ -27,10 +26,6 @@ def tool(
             ...
     """
     def decorator(func: Callable) -> Callable:
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            return await func(*args, **kwargs)
-
         # Infer parameter schema from function signature
         sig = inspect.signature(func)
         props = {}
@@ -64,13 +59,13 @@ def tool(
         if required:
             param_schema["required"] = required
 
-        wrapper._tool_meta = {
+        func._tool_meta = {
             "name": name or func.__name__,
             "description": description or func.__doc__ or "",
             "parameters": parameters or param_schema,
         }
-        wrapper._is_tool = True
-        return wrapper
+        func._is_tool = True
+        return func
     return decorator
 
 

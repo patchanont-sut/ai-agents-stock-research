@@ -44,28 +44,22 @@ Write all free-text fields in English."""
     async def run(self, context: dict) -> BullOutput:
         memory = context.get("memory")
         symbol = context.get("symbol", "Unknown")
-        trace_agent = context.get("trace_agent")
         logger.info(f"[BullAgent] Building bull case for {symbol}")
 
-        prompt_context = memory.get_prompt_context(exclude_current="bull_output")
         user_prompt = f"Build the strongest bullish thesis for {symbol} using the context data. Output English JSON."
-
         fallback = {"thesis": "", "evidence": [], "catalysts": [], "confidence": 0.5}
-
-        try:
-            parsed = await self._call_json_llm(
-                user_prompt=user_prompt,
-                context=prompt_context,
-                fallback=fallback,
-                temperature=0.4,
-                max_tokens=1600,
-                thinking_enabled=False,
-                trace_agent=trace_agent,
-                llm_call_name="bull_case_json",
-            )
-        except Exception as e:
-            logger.error(f"[BullAgent] Failed: {e}")
-            parsed = {"thesis": str(e), "evidence": [], "catalysts": [], "confidence": 0.5}
+        parsed = await self._call_context_json_llm(
+            context,
+            exclude_current="bull_output",
+            user_prompt=user_prompt,
+            fallback=fallback,
+            temperature=0.4,
+            max_tokens=1600,
+            llm_call_name="bull_case_json",
+            thinking_enabled=False,
+        )
+        if parsed.get("_error"):
+            parsed["thesis"] = parsed["_error"]
 
         evidence = BaseAgent._normalize_string_list(parsed.get("evidence", []))
         catalysts = BaseAgent._normalize_string_list(parsed.get("catalysts", []))

@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 import httpx
 
@@ -56,13 +56,7 @@ class TranslationReport:
         return not self.failed and not self.missing_required
 
 
-@dataclass
-class TranslationField:
-    label: str
-    source: Callable[[], Any]
-    target: Callable[[], Any]
-    assign: Callable[[Any], None]
-    required: bool = False
+TranslationField = tuple[str, Any, str, str, bool]
 
 
 def has_thai(value: Any) -> bool:
@@ -101,8 +95,9 @@ class ThaiTranslationService:
         pending: dict[str, tuple[TranslationField, Any]] = {}
 
         for index, field_spec in enumerate(fields):
-            current = field_spec.source()
-            existing = field_spec.target()
+            label, obj, source_attr, target_attr, _required = field_spec
+            current = getattr(obj, source_attr)
+            existing = getattr(obj, target_attr)
 
             if not current:
                 continue
@@ -130,25 +125,26 @@ class ThaiTranslationService:
                         failed_ids.update(batch.keys())
 
                 for field_id, (field_spec, current) in pending.items():
+                    label, obj, _source_attr, target_attr, required = field_spec
                     value = translated.get(field_id)
                     if self._is_valid_translation(value, current):
-                        field_spec.assign(value)
+                        setattr(obj, target_attr, value)
                         report.translated += 1
                         continue
 
                     try:
                         fallback_value = await self._translate_value(client, current)
                         if self._is_valid_translation(fallback_value, current):
-                            field_spec.assign(fallback_value)
+                            setattr(obj, target_attr, fallback_value)
                             report.translated += 1
                             if field_id in failed_ids:
-                                logger.info("Thai translation recovered via single-field fallback: %s", field_spec.label)
+                                logger.info("Thai translation recovered via single-field fallback: %s", label)
                             continue
                     except Exception as e:
-                        logger.error("Thai translation fallback failed for %s: %s", field_spec.label, e)
+                        logger.error("Thai translation fallback failed for %s: %s", label, e)
 
-                    if field_spec.required:
-                        report.failed.append(field_spec.label)
+                    if required:
+                        report.failed.append(label)
 
         report.missing_required = self._missing_required(fields)
         return report
@@ -160,13 +156,14 @@ class ThaiTranslationService:
         report = TranslationReport()
 
         for field_spec in fields:
-            current = field_spec.source()
+            label, obj, source_attr, target_attr, required = field_spec
+            current = getattr(obj, source_attr)
             if not current:
                 continue
-            if self._is_valid_translation(field_spec.target(), current):
+            if self._is_valid_translation(getattr(obj, target_attr), current):
                 report.translated += 1
-            elif field_spec.required:
-                report.missing_required.append(field_spec.label)
+            elif required:
+                report.missing_required.append(label)
 
         return report
 
@@ -266,12 +263,12 @@ class ThaiTranslationService:
 
     def _missing_required(self, fields: list[TranslationField]) -> list[str]:
         return [
-            field_spec.label
-            for field_spec in fields
+            label
+            for label, obj, source_attr, target_attr, required in fields
             if (
-                field_spec.required
-                and field_spec.source()
-                and not self._is_valid_translation(field_spec.target(), field_spec.source())
+                required
+                and getattr(obj, source_attr)
+                and not self._is_valid_translation(getattr(obj, target_attr), getattr(obj, source_attr))
             )
         ]
 
@@ -281,15 +278,7 @@ class ThaiTranslationService:
         def add(label: str, obj: Any, source_attr: str, target_attr: str, required: bool = False):
             if obj is None:
                 return
-            fields.append(
-                TranslationField(
-                    label=label,
-                    source=lambda obj=obj, attr=source_attr: getattr(obj, attr),
-                    target=lambda obj=obj, attr=target_attr: getattr(obj, attr),
-                    assign=lambda value, obj=obj, attr=target_attr: setattr(obj, attr, value),
-                    required=required,
-                )
-            )
+            fields.append((label, obj, source_attr, target_attr, required))
 
         add("research.company_profile", result.research, "company_profile", "company_profile_th")
         add("research.summary", result.research, "summary", "summary_th")

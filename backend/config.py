@@ -24,6 +24,14 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return os.getenv(name, default_text).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_csv(name: str, default: list[str]) -> list[str]:
+    """Return a comma-separated env var as a list."""
+    value = os.getenv(name, "").strip()
+    if not value:
+        return default
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 def _flash_model_only(value: str) -> str:
     """Keep the project on the single supported cost-optimized model."""
     return "deepseek-v4-flash" if value != "deepseek-v4-flash" else value
@@ -75,7 +83,10 @@ class Settings:
     # ── Server ──
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", "8001"))
-    CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+    CORS_ORIGINS: list[str] = _env_csv(
+        "CORS_ORIGINS",
+        ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"],
+    )
 
     # ── Analysis Settings ──
     MAX_NEWS_ARTICLES: int = int(os.getenv("MAX_NEWS_ARTICLES", "15"))

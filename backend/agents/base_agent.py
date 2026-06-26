@@ -277,6 +277,37 @@ class BaseAgent(ABC):
             allow_list_first_dict=True,
         )
 
+    async def _call_context_json_llm(
+        self,
+        context: dict,
+        *,
+        exclude_current: str,
+        user_prompt: str,
+        fallback: dict,
+        temperature: float,
+        max_tokens: int,
+        llm_call_name: str,
+        thinking_enabled: bool = False,
+    ) -> dict:
+        """Call JSON LLM with shared pipeline context and fallback logging."""
+        memory = context.get("memory")
+        trace_agent = context.get("trace_agent")
+
+        try:
+            return await self._call_json_llm(
+                user_prompt=user_prompt,
+                context=memory.get_prompt_context(exclude_current=exclude_current),
+                fallback=fallback,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                thinking_enabled=thinking_enabled,
+                trace_agent=trace_agent,
+                llm_call_name=llm_call_name,
+            )
+        except Exception as e:
+            logger.error(f"[{self.AGENT_NAME}] Failed: {e}")
+            return {**fallback, "_error": str(e)}
+
     # ── Shared Robust JSON Parsing ──
     @staticmethod
     def _strip_json_fence(text: str) -> str:

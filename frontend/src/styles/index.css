@@ -2893,6 +2893,301 @@ html:lang(th) .hero-action-badge {
   padding: 0 2px;
 }
 
+/* ── EVIDENCE EXPLORER ── */
+.evidence-explorer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.evidence-filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 2px;
+}
+
+.evidence-search-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 14px;
+  background: rgba(13, 28, 45, 0.72);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  transition: all var(--transition);
+}
+
+.evidence-search-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.evidence-search-input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px rgba(78, 222, 163, 0.08);
+  background: rgba(13, 28, 45, 0.9);
+}
+
+.evidence-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.evidence-filter-chip {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  background: rgba(18, 33, 49, 0.78);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.evidence-filter-chip:hover {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background: rgba(28, 43, 60, 0.96);
+  transform: translateY(-1px);
+}
+
+.evidence-filter-chip-active {
+  color: #003824;
+  border-color: rgba(111, 251, 190, 0.38);
+  background: linear-gradient(135deg, rgba(78, 222, 163, 0.96), rgba(16, 185, 129, 0.9));
+  box-shadow: 0 10px 22px rgba(16, 185, 129, 0.18);
+}
+
+.evidence-filter-chip-active:hover {
+  color: #003824;
+  border-color: rgba(111, 251, 190, 0.42);
+  background: linear-gradient(135deg, rgba(111, 251, 190, 0.98), rgba(78, 222, 163, 0.94));
+}
+
+/* ── MEMO PANEL ── */
+.memo-panel .card-title {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.export-btn {
+  margin-left: auto;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(78, 222, 163, 0.24);
+  border-radius: var(--radius-full);
+  background: rgba(12, 95, 69, 0.18);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.export-btn:hover:not(:disabled) {
+  color: #003824;
+  background: linear-gradient(135deg, rgba(78, 222, 163, 0.98), rgba(16, 185, 129, 0.92));
+  border-color: rgba(111, 251, 190, 0.42);
+  box-shadow: 0 10px 22px rgba(16, 185, 129, 0.18);
+  transform: translateY(-1px);
+}
+
+.export-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.memo-title {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-md);
+  color: var(--text-primary);
+}
+
+.memo-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.memo-section-heading {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.memo-section-content {
+  color: var(--text-secondary);
+  line-height: 1.75;
+}
+
+.memo-recommendation-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: rgba(78, 222, 163, 0.12);
+  border: 1px solid rgba(78, 222, 163, 0.2);
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.citation-chip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: baseline;
+}
+
+.citation-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  margin: 0 2px;
+  padding: 2px 7px;
+  border: 1px solid rgba(78, 222, 163, 0.2);
+  border-radius: 999px;
+  background: rgba(78, 222, 163, 0.12);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.citation-chip:hover {
+  color: #003824;
+  background: linear-gradient(135deg, rgba(111, 251, 190, 0.98), rgba(78, 222, 163, 0.94));
+  border-color: rgba(111, 251, 190, 0.42);
+  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.16);
+  transform: translateY(-1px);
+}
+
+.citation-chip-unknown {
+  background: rgba(255, 180, 171, 0.12);
+  border-color: rgba(255, 180, 171, 0.2);
+  color: var(--negative);
+}
+
+.citation-chip-unknown:hover {
+  color: #3a0906;
+  background: rgba(255, 180, 171, 0.9);
+  border-color: rgba(255, 180, 171, 0.35);
+  box-shadow: 0 8px 18px rgba(255, 180, 171, 0.14);
+}
+
+.citation-detail {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: min(360px, 80vw);
+  padding: 12px 14px;
+  border: 1px solid var(--border-light);
+  border-top-color: var(--glass-border-top);
+  border-radius: 14px;
+  background: rgba(12, 24, 38, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-lg);
+}
+
+.citation-detail-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.citation-detail-source {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.citation-detail-snippet,
+.citation-detail-quote,
+.citation-detail-warning {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.citation-detail-quote {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.citation-detail-warning {
+  color: var(--negative);
+}
+
+.citation-detail-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.citation-detail-url:hover {
+  color: var(--accent-hover);
+}
+
+.memo-key-citations {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memo-key-citations-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memo-key-citation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.memo-key-citation-summary {
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
 /* ── TRACE PANEL ── */
 .trace-panel {
   padding: 22px 2px;

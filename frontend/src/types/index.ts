@@ -246,35 +246,6 @@ export interface AnalysisResult {
   investment_memo?: InvestmentMemo | null;
 }
 
-export interface AnalyzeResponse {
-  analysis_id: string;
-  status: AnalysisStatus;
-  message: string;
-}
-
-export interface StatusResponse {
-  analysis_id: string;
-  status: AnalysisStatus;
-  symbol: string;
-  completed_agents: string[];
-}
-
-export interface MacroData {
-  sp500_change: number | null;
-  nasdaq_change: number | null;
-  vix: number | null;
-  treasury_10y: number | null;
-  fed_funds_rate: number | null;
-  timestamp: string;
-}
-
-export interface EvidenceResponse {
-  analysis_id: string;
-  symbol: string;
-  evidence_library: EvidenceItem[];
-  investment_memo: InvestmentMemo | null;
-}
-
 // ── Comparison & Evaluation Types ──
 
 export interface CompareStockSummary {
@@ -328,9 +299,3 @@ export interface EvaluationMetrics {
   overall_quality_score: number;
 }
 
-export interface CompareEvaluationResponse {
-  compare_id: string;
-  symbols: string[];
-  winner_symbol: string;
-  metrics: EvaluationMetrics[];
-}

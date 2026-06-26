@@ -3,6 +3,10 @@ from __future__ import annotations
 
 from core.models import CompareStockSummary
 
+_ALLOWED_SYMBOL_CHARS = set(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
+)
+
 
 def normalize_compare_symbols(symbols: list[str]) -> list[str]:
     """Normalize and validate comparison symbols.
@@ -25,6 +29,14 @@ def normalize_compare_symbols(symbols: list[str]) -> list[str]:
         s = raw.strip().upper() if raw else ""
         if not s:
             raise ValueError("Empty symbol after trimming is not allowed.")
+        if (
+            len(s) > 12
+            or not s[0].isalpha()
+            or any(ch not in _ALLOWED_SYMBOL_CHARS for ch in s)
+        ):
+            raise ValueError(
+                "Symbols may contain only letters, numbers, dots, and hyphens, must start with a letter, and be 1-12 characters."
+            )
         if s in seen:
             raise ValueError(f"Duplicate symbol detected after normalization: {s}")
         seen.add(s)

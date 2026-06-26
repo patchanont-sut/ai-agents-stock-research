@@ -60,10 +60,6 @@ class CacheManager:
         digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
         return self._cache_dir / f"{digest}.json"
 
-    def _build_legacy_filepath(self, key: str) -> Path:
-        safe_key = key.replace("/", "_").replace("\\", "_").replace(":", "_")
-        return self._cache_dir / f"{safe_key}.json"
-
     def _load_from_disk(self):
         """Load all cached files from disk into memory on startup."""
         if not self._cache_dir.exists():
@@ -112,8 +108,6 @@ class CacheManager:
             if entry is None:
                 # Try disk
                 filepath = self._build_filepath(key)
-                if not filepath.exists():
-                    filepath = self._build_legacy_filepath(key)
                 if filepath.exists():
                     try:
                         data = json.loads(filepath.read_text(encoding="utf-8"))

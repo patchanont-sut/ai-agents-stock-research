@@ -576,16 +576,11 @@ export function t(key: string, replacements?: Record<string, string>): string {
 
 /** Pick Thai version if language is Thai, otherwise English */
 export function l<T>(en: T, th: T | undefined): T {
-  const hasThai = (value: unknown): boolean => {
-    if (typeof value === "string") return /[\u0E00-\u0E7F]/.test(value);
-    if (Array.isArray(value)) return value.some((item) => hasThai(item));
-    return false;
-  };
   const isTranslated = (value: unknown, fallback: unknown): boolean => {
-    if (typeof value === "string") return value.trim() !== "" && hasThai(value);
+    if (typeof value === "string") return value.trim() !== "" && hasThaiText(value);
     if (Array.isArray(value)) {
-      if (!Array.isArray(fallback)) return hasThai(value);
-      return value.length === fallback.length && value.every((item) => hasThai(item));
+      if (!Array.isArray(fallback)) return hasThaiText(value);
+      return value.length === fallback.length && value.every((item) => hasThaiText(item));
     }
     return value !== undefined && value !== null;
   };
@@ -596,7 +591,7 @@ export function l<T>(en: T, th: T | undefined): T {
 
   if (currentLanguage === "th") {
     if (isTranslated(th, en)) return th as T;
-    if (hasThai(en)) return en;
+    if (hasThaiText(en)) return en;
     return missing();
   }
   return en;

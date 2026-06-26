@@ -79,6 +79,7 @@ export function EvidenceExplorer({ evidenceLibrary }: Props) {
           {FILTER_KEYS.map((opt) => (
             <button
               key={opt.value}
+              type="button"
               className={`evidence-filter-chip ${filter === opt.value ? 'evidence-filter-chip-active' : ''}`}
               onClick={() => setFilter(opt.value)}
             >

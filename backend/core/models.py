@@ -8,7 +8,7 @@ from typing import Optional
 from enum import Enum
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # ── Enums ──
@@ -266,8 +266,18 @@ class AnalysisResult(BaseModel):
 # ── API Request / Response ──
 
 class AnalyzeRequest(BaseModel):
-    symbol: str = Field(..., min_length=1, max_length=30, description="Stock ticker symbol (e.g. AAPL)")
-    language: str = Field(default="en", description="Response language: 'en' or 'th'")
+    symbol: str = Field(
+        ...,
+        min_length=1,
+        max_length=12,
+        pattern=r"^[A-Za-z][A-Za-z0-9.-]*$",
+        description="Stock ticker symbol (e.g. AAPL)",
+    )
+    language: str = Field(
+        default="en",
+        pattern=r"^(en|th)$",
+        description="Response language: 'en' or 'th'",
+    )
 
 
 class AnalyzeResponse(BaseModel):
@@ -290,7 +300,29 @@ class MacroData(BaseModel):
 class CompareRequest(BaseModel):
     """Request to compare multiple stocks side-by-side."""
     symbols: list[str] = Field(..., min_length=2, max_length=4, description="Stock ticker symbols (2-4)")
-    language: str = Field(default="en", description="Response language: 'en' or 'th'")
+    language: str = Field(
+        default="en",
+        pattern=r"^(en|th)$",
+        description="Response language: 'en' or 'th'",
+    )
+
+    @field_validator("symbols")
+    @classmethod
+    def validate_symbols(cls, symbols: list[str]) -> list[str]:
+        for symbol in symbols:
+            if not isinstance(symbol, str):
+                raise ValueError("Symbols must be strings.")
+            stripped = symbol.strip()
+            if len(stripped) > 12 or not stripped:
+                raise ValueError("Symbols must be 1-12 characters.")
+            allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
+            if not stripped[0].isalpha() or any(
+                ch not in allowed_chars for ch in stripped
+            ):
+                raise ValueError(
+                    "Symbols may contain only letters, numbers, dots, and hyphens, and must start with a letter."
+                )
+        return symbols
 
 
 class CompareStockSummary(BaseModel):

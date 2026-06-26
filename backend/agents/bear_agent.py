@@ -44,28 +44,22 @@ Write all free-text fields in English."""
     async def run(self, context: dict) -> BearOutput:
         memory = context.get("memory")
         symbol = context.get("symbol", "Unknown")
-        trace_agent = context.get("trace_agent")
         logger.info(f"[BearAgent] Building bear case for {symbol}")
 
-        prompt_context = memory.get_prompt_context(exclude_current="bear_output")
         user_prompt = f"Build the strongest bearish thesis for {symbol} using the context data. Output English JSON."
-
         fallback = {"thesis": "", "evidence": [], "risk_factors": [], "confidence": 0.5}
-
-        try:
-            parsed = await self._call_json_llm(
-                user_prompt=user_prompt,
-                context=prompt_context,
-                fallback=fallback,
-                temperature=0.4,
-                max_tokens=1600,
-                thinking_enabled=False,
-                trace_agent=trace_agent,
-                llm_call_name="bear_case_json",
-            )
-        except Exception as e:
-            logger.error(f"[BearAgent] Failed: {e}")
-            parsed = {"thesis": str(e), "evidence": [], "risk_factors": [], "confidence": 0.5}
+        parsed = await self._call_context_json_llm(
+            context,
+            exclude_current="bear_output",
+            user_prompt=user_prompt,
+            fallback=fallback,
+            temperature=0.4,
+            max_tokens=1600,
+            llm_call_name="bear_case_json",
+            thinking_enabled=False,
+        )
+        if parsed.get("_error"):
+            parsed["thesis"] = parsed["_error"]
 
         evidence = BaseAgent._normalize_string_list(parsed.get("evidence", []))
         risk_factors = BaseAgent._normalize_string_list(parsed.get("risk_factors", []))
