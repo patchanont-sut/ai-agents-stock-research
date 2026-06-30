@@ -82,6 +82,41 @@ def test_compare_start_normalizes_symbols_and_completes_fake_pipeline(monkeypatc
     assert result_data["summaries"][1]["symbol"] == "MSFT"
 
 
+def test_compare_start_accepts_market_aliases(monkeypatch):
+    async def fake_run_comparison_pipeline(symbols: list[str], compare_id: str, language: str = "en") -> None:
+        main_module._comparison_progress[compare_id] = {
+            symbol: [f"analysis-{symbol}", "complete"] for symbol in symbols
+        }
+        main_module._comparison_store[compare_id] = CompareResult(
+            id=compare_id,
+            symbols=symbols,
+            status=AnalysisStatus.COMPLETE,
+            winner_symbol="SPY",
+            ranking_rationale="Ranking rationale: SPY leads.",
+            summaries=[
+                CompareStockSummary(symbol="SPY", cio_action="BUY"),
+                CompareStockSummary(symbol="QQQ", cio_action="HOLD"),
+            ],
+            comparison_table=[
+                {"symbol": "SPY", "action": "BUY"},
+                {"symbol": "QQQ", "action": "HOLD"},
+            ],
+            errors=[],
+        )
+
+    monkeypatch.setattr(main_module, "run_comparison_pipeline", fake_run_comparison_pipeline)
+    clear_comparison_state()
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/compare",
+        json={"symbols": ["S&P 500", "NASDAQ"], "language": "en"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["symbols"] == ["SPY", "QQQ"]
+
+
 def test_compare_result_returns_202_while_pending():
     clear_comparison_state()
     compare_id = "compare-pending"

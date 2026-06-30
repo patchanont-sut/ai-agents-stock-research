@@ -230,6 +230,10 @@ class TestSymbolNormalization:
         result = normalize_compare_symbols(["aapl", " msft ", "\tgoogl", " AMZN "])
         assert result == ["AAPL", "MSFT", "GOOGL", "AMZN"]
 
+    def test_aliases_are_canonicalized(self):
+        result = normalize_compare_symbols(["S&P500", "NASDAQ"])
+        assert result == ["SPY", "QQQ"]
+
 
 class TestCompareStockSummary:
     """Test CompareStockSummary model validation."""

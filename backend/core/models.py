@@ -10,6 +10,18 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+_SYMBOL_ALIASES = {
+    "NASDAQ": "QQQ",
+    "S&P500": "SPY",
+    "S&P 500": "SPY",
+    "SP500": "SPY",
+}
+
+
+def canonicalize_symbol(symbol: str) -> str:
+    stripped = " ".join(symbol.strip().upper().split())
+    return _SYMBOL_ALIASES.get(stripped, stripped)
+
 
 # ── Enums ──
 
@@ -266,18 +278,25 @@ class AnalysisResult(BaseModel):
 # ── API Request / Response ──
 
 class AnalyzeRequest(BaseModel):
-    symbol: str = Field(
-        ...,
-        min_length=1,
-        max_length=12,
-        pattern=r"^[A-Za-z][A-Za-z0-9.-]*$",
-        description="Stock ticker symbol (e.g. AAPL)",
-    )
+    symbol: str = Field(..., min_length=1, max_length=12, description="Stock ticker symbol (e.g. AAPL)")
     language: str = Field(
         default="en",
         pattern=r"^(en|th)$",
         description="Response language: 'en' or 'th'",
     )
+
+    @field_validator("symbol")
+    @classmethod
+    def validate_symbol(cls, symbol: str) -> str:
+        canonical = canonicalize_symbol(symbol)
+        if len(canonical) > 12 or not canonical:
+            raise ValueError("Symbol must be 1-12 characters.")
+        allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
+        if not canonical[0].isalpha() or any(ch not in allowed_chars for ch in canonical):
+            raise ValueError(
+                "Symbol may contain only letters, numbers, dots, and hyphens, and must start with a letter."
+            )
+        return canonical
 
 
 class AnalyzeResponse(BaseModel):
@@ -309,20 +328,22 @@ class CompareRequest(BaseModel):
     @field_validator("symbols")
     @classmethod
     def validate_symbols(cls, symbols: list[str]) -> list[str]:
+        normalized: list[str] = []
         for symbol in symbols:
             if not isinstance(symbol, str):
                 raise ValueError("Symbols must be strings.")
-            stripped = symbol.strip()
-            if len(stripped) > 12 or not stripped:
+            canonical = canonicalize_symbol(symbol)
+            if len(canonical) > 12 or not canonical:
                 raise ValueError("Symbols must be 1-12 characters.")
             allowed_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
-            if not stripped[0].isalpha() or any(
-                ch not in allowed_chars for ch in stripped
+            if not canonical[0].isalpha() or any(
+                ch not in allowed_chars for ch in canonical
             ):
                 raise ValueError(
                     "Symbols may contain only letters, numbers, dots, and hyphens, and must start with a letter."
                 )
-        return symbols
+            normalized.append(canonical)
+        return normalized
 
 
 class CompareStockSummary(BaseModel):

@@ -1,7 +1,7 @@
 """Comparison module: symbol normalization, validation, and deterministic ranking."""
 from __future__ import annotations
 
-from core.models import CompareStockSummary
+from core.models import CompareStockSummary, canonicalize_symbol
 
 _ALLOWED_SYMBOL_CHARS = set(
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
@@ -26,7 +26,7 @@ def normalize_compare_symbols(symbols: list[str]) -> list[str]:
     seen: set[str] = set()
 
     for raw in symbols:
-        s = raw.strip().upper() if raw else ""
+        s = canonicalize_symbol(raw) if raw else ""
         if not s:
             raise ValueError("Empty symbol after trimming is not allowed.")
         if (
