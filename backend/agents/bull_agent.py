@@ -44,15 +44,13 @@ Write all free-text fields in English."""
     async def run(self, context: dict) -> BullOutput:
         memory = context.get("memory")
         symbol = context.get("symbol", "Unknown")
-        logger.info(f"[BullAgent] Building bull case for {symbol}")
+        logger.info("[BullAgent] Building bull case for %s", symbol)
 
-        user_prompt = f"Build the strongest bullish thesis for {symbol} using the context data. Output English JSON."
-        fallback = {"thesis": "", "evidence": [], "catalysts": [], "confidence": 0.5}
         parsed = await self._call_context_json_llm(
             context,
             exclude_current="bull_output",
-            user_prompt=user_prompt,
-            fallback=fallback,
+            user_prompt=f"Build the strongest bullish thesis for {symbol} using the context data. Output English JSON.",
+            fallback={"thesis": "", "evidence": [], "catalysts": [], "confidence": 0.5},
             temperature=0.4,
             max_tokens=1600,
             llm_call_name="bull_case_json",
@@ -63,8 +61,7 @@ Write all free-text fields in English."""
 
         evidence = BaseAgent._normalize_string_list(parsed.get("evidence", []))
         catalysts = BaseAgent._normalize_string_list(parsed.get("catalysts", []))
-        confidence = float(parsed.get("confidence", 0.5))
-        confidence = max(0.0, min(1.0, confidence))
+        confidence = max(0.0, min(1.0, float(parsed.get("confidence", 0.5))))
 
         output = BullOutput(
             thesis=str(parsed.get("thesis", "")),

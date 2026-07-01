@@ -44,15 +44,13 @@ Write all free-text fields in English."""
     async def run(self, context: dict) -> BearOutput:
         memory = context.get("memory")
         symbol = context.get("symbol", "Unknown")
-        logger.info(f"[BearAgent] Building bear case for {symbol}")
+        logger.info("[BearAgent] Building bear case for %s", symbol)
 
-        user_prompt = f"Build the strongest bearish thesis for {symbol} using the context data. Output English JSON."
-        fallback = {"thesis": "", "evidence": [], "risk_factors": [], "confidence": 0.5}
         parsed = await self._call_context_json_llm(
             context,
             exclude_current="bear_output",
-            user_prompt=user_prompt,
-            fallback=fallback,
+            user_prompt=f"Build the strongest bearish thesis for {symbol} using the context data. Output English JSON.",
+            fallback={"thesis": "", "evidence": [], "risk_factors": [], "confidence": 0.5},
             temperature=0.4,
             max_tokens=1600,
             llm_call_name="bear_case_json",
@@ -63,8 +61,7 @@ Write all free-text fields in English."""
 
         evidence = BaseAgent._normalize_string_list(parsed.get("evidence", []))
         risk_factors = BaseAgent._normalize_string_list(parsed.get("risk_factors", []))
-        confidence = float(parsed.get("confidence", 0.5))
-        confidence = max(0.0, min(1.0, confidence))
+        confidence = max(0.0, min(1.0, float(parsed.get("confidence", 0.5))))
 
         output = BearOutput(
             thesis=str(parsed.get("thesis", "")),

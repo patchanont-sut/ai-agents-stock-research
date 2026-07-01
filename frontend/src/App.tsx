@@ -1,5 +1,5 @@
 // MarketMind AI Dashboard — Main Application
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getLanguage, hasThaiText, setLanguage, Language, t } from './i18n';
 import { useAnalysis } from './hooks/useAnalysis';
 import { LanguageToggle } from './components/LanguageToggle';
@@ -82,12 +82,12 @@ export default function App() {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const handleLanguageChange = useCallback((next: Language) => {
+  function handleLanguageChange(next: Language) {
     setLanguage(next);
     setLang(next);
-  }, []);
+  }
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = symbol.trim().toUpperCase();
     if (trimmed) {
@@ -95,32 +95,32 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       startAnalysis(trimmed, lang);
     }
-  }, [lang, symbol, startAnalysis]);
+  }
 
-  const handleTickerSelect = useCallback((ticker: string) => {
+  function handleTickerSelect(ticker: string) {
     setSymbol(ticker);
     setActiveView('analysis');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     startAnalysis(ticker, lang);
-  }, [lang, startAnalysis]);
+  }
 
-  const handleLoadDemo = useCallback(async () => {
+  async function handleLoadDemo() {
     setActiveView('analysis');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     await loadDemo();
-  }, [loadDemo]);
+  }
 
-  const handleOpenCompare = useCallback(() => {
+  function handleOpenCompare() {
     setActiveView('compare');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }
 
-  const handleViewChange = useCallback((view: AppView) => {
+  function handleViewChange(view: AppView) {
     setActiveView(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }
 
-  const addToWatchlist = useCallback((ticker: string) => {
+  function addToWatchlist(ticker: string) {
     const nextTicker = ticker.trim().toUpperCase();
     if (!nextTicker) return;
     setWatchlist((current) => {
@@ -128,15 +128,15 @@ export default function App() {
       saveJson(WATCHLIST_KEY, next);
       return next;
     });
-  }, []);
+  }
 
-  const removeFromWatchlist = useCallback((ticker: string) => {
+  function removeFromWatchlist(ticker: string) {
     setWatchlist((current) => {
       const next = current.filter((item) => item !== ticker);
       saveJson(WATCHLIST_KEY, next);
       return next;
     });
-  }, []);
+  }
 
   useEffect(() => {
     if (!result || (result.status !== 'complete' && result.status !== 'partial')) return;
